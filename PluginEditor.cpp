@@ -1,4 +1,5 @@
 #include "PluginEditor.h"
+#include "WigaWindowSize.h"
 
 using namespace juce;
 
@@ -58,13 +59,15 @@ TexturalAudioProcessorEditor::TexturalAudioProcessorEditor (TexturalAudioProcess
         for (int f = 0; f < kKnobFrames; ++f)
             knobFrames[k][f] = caps[k].getClippedImage ({ 0, f * kKnobFramePx, kKnobFramePx, kKnobFramePx }).createCopy();
 
+    // taille sauvegardée avec le projet pour cette instance si elle existe, sinon taille choisie dans « Default size (new windows) »
+    const int savedH = proc.uiHeight.load();          // lu avant setResizeLimits (qui appelle resized)
     setResizable (true, true);
     setResizeLimits (roundToInt (kDefaultH * kDesignW / kDesignH), kDefaultH,
                      roundToInt (kMaxH * kDesignW / kDesignH), kMaxH);
     if (auto* c = getConstrainer()) c->setFixedAspectRatio (kDesignW / kDesignH);
     setOpaque (true);                      // anti-gel : l'hôte ne redessine jamais ce qui est derrière la fenêtre
 
-    setHeightKeepingAspect (jlimit (kDefaultH, kMaxH, proc.uiHeight.load()));
+    setHeightKeepingAspect (savedH > 0 ? jlimit (kDefaultH, kMaxH, savedH) : sizeHeight (WigaWindowSize::defaultIndex (JucePlugin_Name, kNumSizes)));
     rebuildCaches();
     startTimerHz (30);
 }
@@ -138,6 +141,12 @@ void TexturalAudioProcessorEditor::rebuildCaches (float sc)
     }
     bgCache = img;
     repaint();
+}
+
+int TexturalAudioProcessorEditor::sizeHeight (int idx)
+{
+    const int h[kNumSizes] = { kDefaultH, kH75, kH100 };
+    return h[jlimit (0, kNumSizes - 1, idx)];
 }
 
 void TexturalAudioProcessorEditor::setHeightKeepingAspect (int h)
@@ -646,9 +655,20 @@ void TexturalAudioProcessorEditor::showMenu (int learnIdx)
         m.addSeparator();
     }
     m.addSectionHeader ("Textural (Studio Wiga)");
-    m.addItem (1, "60 % (default)", true, h == kDefaultH);
-    m.addItem (3, "75 %",  true, h == kH75);
-    m.addItem (4, "100 %", true, h == kH100);
+    {
+        // Plugin size : taille de cette fenêtre + taille par défaut des nouvelles fenêtres (comme Octopus)
+        const char* names[kNumSizes] = { "60 %", "75 %", "100 %" };
+        const int def = WigaWindowSize::defaultIndex (JucePlugin_Name, kNumSizes);
+        PopupMenu sizes, defSizes;
+        for (int i = 0; i < kNumSizes; ++i)
+        {
+            sizes.addItem (1 + i, String (names[i]) + (i == def ? "  (default)" : ""), true, std::abs (h - sizeHeight (i)) <= 2);
+            defSizes.addItem (30 + i, names[i], true, i == def);
+        }
+        sizes.addSeparator();
+        sizes.addSubMenu ("Default size (new windows)", defSizes);
+        m.addSubMenu ("Plugin size", sizes);
+    }
     m.addSeparator();
 
     PopupMenu save;
@@ -682,10 +702,11 @@ void TexturalAudioProcessorEditor::showMenu (int learnIdx)
         auto& ed = *safe;
         switch (r)
         {
-            case 1: ed.setHeightKeepingAspect (kDefaultH); break;
-            case 2: ed.setHeightKeepingAspect (kH60);  break;
-            case 3: ed.setHeightKeepingAspect (kH75);  break;
-            case 4: ed.setHeightKeepingAspect (kH100); break;
+            case 1: case 2: case 3: ed.setHeightKeepingAspect (sizeHeight (r - 1)); break;
+            case 30: case 31: case 32:
+                WigaWindowSize::setDefaultIndex (JucePlugin_Name, r - 30);   // toutes les nouvelles fenêtres de ce plugin
+                ed.setHeightKeepingAspect (sizeHeight (r - 30));            // et cette fenêtre tout de suite
+                break;
             case 21: ed.proc.resetPresetToFactory (ed.proc.currentPreset.load()); break;
             case 22: ed.proc.resetAllPresets(); break;
             case 23:

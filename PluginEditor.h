@@ -35,6 +35,8 @@ public:
     static constexpr float kDesignH = 1000.0f;
     static constexpr float kDesignW = 780.0f * kDesignH / 990.0f;
     static constexpr int   kDefaultH = 493, kH60 = 592, kH75 = 740, kH100 = 986, kMaxH = 1479;
+    static constexpr int   kNumSizes = 3;          // menu Plugin size : 60 % (défaut d'origine) / 75 % / 100 %
+    static int sizeHeight (int idx);
     // Pedal space: the layout the control coordinates are given in (photo 1246 x 1805 scaled
     // to 1000 units high, with a 202.8-unit margin on each side). It is mapped into the window
     // by pedalTransform().

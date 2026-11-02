@@ -89,7 +89,7 @@ public:
     void resetMidiMap();
 
     // UI
-    std::atomic<int> uiHeight { 493 };
+    std::atomic<int> uiHeight { 0 };      // 0 = pas de taille sauvegardée pour cette instance -> taille par défaut des nouvelles fenêtres
     bool isFrozen() const       { return engine.frozen.load(); }
     int  activeLayers() const   { return engine.layersActive.load(); }
 

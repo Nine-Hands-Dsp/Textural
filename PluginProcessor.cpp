@@ -687,7 +687,10 @@ void TexturalAudioProcessor::setStateInformation (const void* data, int size)
     loadedSnapshot = stringToSnapshot (state.getProperty ("loaded").toString());
     currentPreset  = jlimit (0, kLastPreset, (int) state.getProperty ("preset", kLivePreset));
     if (currentPreset.load() == 0) currentPreset = kLivePreset;
-    uiHeight       = jlimit (493, 1479, (int) state.getProperty ("uiHeight", 493));
+    {
+        const int uh = (int) state.getProperty ("uiHeight", 0);   // 0 = aucune taille sauvegardée pour cette instance
+        uiHeight = uh > 0 ? jlimit (493, 1479, uh) : 0;
+    }
     // assignations MIDI Learn (ancien projet sans ces propriétés : CC fixes d'avant)
     for (int i = 0; i < kNumLearn; ++i)
         ccAssign[i].store (jlimit (-1, 127, (int) state.getProperty ("cc_" + learnId (i), learnDefaultCC (i))));
