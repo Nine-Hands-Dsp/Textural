@@ -238,7 +238,7 @@ T = {
  w_t="7. Window and status line",
  w=["Right-click (outside a control) &gt; <b>Plugin size</b>: <b>60 %</b>, <b>75 %</b> or <b>100 %</b> (the current size is ticked); <i>(default)</i> is shown next to the default size. You can also drag the corner (proportions kept). The window can never be made smaller than 60 %.",
     "<b>Plugin size &gt; Default size (new windows)</b> chooses the size at which every new Textural window opens (60 % at first). This setting is common to all instances and saved on your computer (<i>settings.xml</i> in the Studio Wiga\\Textural folder of your user data: %APPDATA% on Windows, ~/Library on macOS); the open window takes that size at once.",
-    "Each instance also remembers its own window size in the project (the size its window had when the project was saved), and this size takes priority over the default size when the project is reopened. A new instance opens at the default size.",
+    "Each instance also remembers its own size in the project (the size its window had when the project was saved), and this size takes priority over the default size when the project is reopened. A new instance opens at the default size.",
     "The <b>status line</b> under the Textural logo shows nothing until you act: only the setting you are turning (in the knob's colour), the mode, the preset you load, a MIDI-controlled setting, and the MIDI Learn messages. It fades out after about 1.5 s."],
  mt=[["Menu item", "Use"],
      ["MIDI Learn / Clear MIDI", "At the top when you right-click a control."],
