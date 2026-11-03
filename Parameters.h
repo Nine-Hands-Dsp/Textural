@@ -98,7 +98,9 @@ namespace Map
 }
 
 //==============================================================================
-// Fixed MIDI CC map (also shown in the status line and README)
+// MIDI-controllable parameters (order = MIDI Learn index). Since v1.3.1 NO CC is assigned by
+// default (MIDI Learn only): the numbers below are the old factory map (< 1.3.1), kept only to
+// recognise old projects whose MIDI map was never changed.
 //==============================================================================
 struct CCEntry { int cc; const juce::String* id; };
 
@@ -117,8 +119,8 @@ inline const std::vector<CCEntry>& ccMap()
     };
     return m;
 }
-inline constexpr int kCCTap        = 83;   // tap tempo (value >= 64)
-inline constexpr int kCCPresetNext = 84;   // next preset (value >= 64)
+inline constexpr int kCCTap        = 83;   // old factory CC: tap tempo (< 1.3.1)
+inline constexpr int kCCPresetNext = 84;   // old factory CC: next preset (< 1.3.1)
 
 inline int ccForParam (const juce::String& id)
 {

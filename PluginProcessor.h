@@ -75,12 +75,13 @@ public:
     std::atomic<int>    lastMidiCC { -1 }, lastMidiValue { 0 };
     std::atomic<double> lastMidiTime { 0.0 };
 
-    // MIDI Learn (v1.2) : toutes les commandes (CC fixes d'avant = numéros par défaut, réassignables)
+    // MIDI Learn (v1.2) : toutes les commandes ; aucun CC assigné par défaut depuis v1.3.1
     // index 0..26 = entrées de ccMap() (même ordre), 27 = tap tempo, 28 = preset suivant
     static constexpr int kNumLearn = 29, kLearnTap = 27, kLearnNext = 28;
     static const juce::String& learnId (int i);
     static const char* learnName (int i);
-    static int learnDefaultCC (int i);
+    static int learnDefaultCC (int i);                // -1 : aucun CC par défaut
+    static int learnOldFactoryCC (int i);             // ancienne table d'usine (< 1.3.1), anciens projets seulement
     static int learnIndexOf (const juce::String& id);
     int learnIndexForCC (int cc) const;
     std::atomic<int> ccAssign[kNumLearn];             // numéro de CC de chaque commande, -1 = non assigné

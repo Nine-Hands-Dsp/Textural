@@ -690,7 +690,7 @@ void TexturalAudioProcessorEditor::showMenu (int learnIdx)
         midi.addItem (1000 + i, "Learn: " + String (TexturalAudioProcessor::learnName (i)) + " (" + ccText (i) + ")", true, lt == i);
     midi.addSeparator();
     if (lt >= 0) midi.addItem (1200, "Cancel MIDI learn");
-    midi.addItem (1201, "Reset MIDI to defaults (fixed CC map)");
+    midi.addItem (1201, "Clear all MIDI assignments");
     midi.addSeparator();
     midi.addItem (1202, "Program Change 1-9 = presets", false);
     m.addSubMenu ("MIDI", midi);

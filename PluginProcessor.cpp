@@ -124,7 +124,9 @@ const String& TexturalAudioProcessor::learnId (int i)
 
 const char* TexturalAudioProcessor::learnName (int i) { return kLearnNames[jlimit (0, kNumLearn - 1, i)]; }
 
-int TexturalAudioProcessor::learnDefaultCC (int i)
+int TexturalAudioProcessor::learnDefaultCC (int) { return -1; }   // aucun CC assigné par défaut (MIDI Learn uniquement)
+
+int TexturalAudioProcessor::learnOldFactoryCC (int i)
 {
     if (i == kLearnTap)  return kCCTap;
     if (i == kLearnNext) return kCCPresetNext;
@@ -234,7 +236,7 @@ void TexturalAudioProcessor::handleMidi (const MidiBuffer& midi)
             if (i == kLearnNext) { if (v >= 64) pendingPresetStep.fetch_add (1); continue; }
             if (i >= kMaxQueued) continue;
             float norm = (float) v / 127.0f;
-            if (i == bypassIndex) norm = v >= 64 ? 0.0f : 1.0f;              // BYPASS (CC82 par défaut) >= 64 = effect ON
+            if (i == bypassIndex) norm = v >= 64 ? 0.0f : 1.0f;              // BYPASS >= 64 = effect ON
             else if (ccIsBool[i]) norm = v >= 64 ? 1.0f : 0.0f;
             else if (ccPositions[i] > 1)                                       // sélecteur : CC réparti sur les positions
                 norm = (float) jmin (ccPositions[i] - 1, v * ccPositions[i] / 128) / (float) (ccPositions[i] - 1);
@@ -559,7 +561,7 @@ void TexturalAudioProcessor::saveUserPresetFile() const
 }
 
 //==============================================================================
-// Tap tempo: hold REVERSE + tap MODE, Ctrl+click MODE, or MIDI CC83
+// Tap tempo: hold REVERSE + tap MODE, Ctrl+click MODE, or a learnt MIDI CC
 void TexturalAudioProcessor::tap()
 {
     const double now = Time::getMillisecondCounterHiRes();
@@ -576,7 +578,7 @@ void TexturalAudioProcessor::tap()
 
     tapBpm = (float) (60000.0 / avg);
     tapSpacing = (float) (avg / 1000.0 / 2.0);          // grains on eighth notes
-    overlapAtTap = rv (raw.overlap);                   // tap() may run on the audio thread (MIDI CC83): no string lookup
+    overlapAtTap = rv (raw.overlap);                   // tap() may run on the audio thread (learnt MIDI CC): no string lookup
     pendingTapSeconds = (float) (avg / 1000.0);      // applied by the timer (message thread)
 }
 
@@ -691,9 +693,14 @@ void TexturalAudioProcessor::setStateInformation (const void* data, int size)
         const int uh = (int) state.getProperty ("uiHeight", 0);   // 0 = aucune taille sauvegardée pour cette instance
         uiHeight = uh > 0 ? jlimit (493, 1479, uh) : 0;
     }
-    // assignations MIDI Learn (ancien projet sans ces propriétés : CC fixes d'avant)
+    // assignations MIDI Learn (ancien projet sans ces propriétés : CC fixes d'avant = ancienne table d'usine)
+    bool untouched = true;
     for (int i = 0; i < kNumLearn; ++i)
-        ccAssign[i].store (jlimit (-1, 127, (int) state.getProperty ("cc_" + learnId (i), learnDefaultCC (i))));
+    {
+        ccAssign[i].store (jlimit (-1, 127, (int) state.getProperty ("cc_" + learnId (i), learnOldFactoryCC (i))));
+        untouched = untouched && ccAssign[i].load() == learnOldFactoryCC (i);
+    }
+    if (untouched) resetMidiMap();   // ancienne table d'usine jamais modifiée (< 1.3.1) -> plus aucune assignation
     apvts.replaceState (state);
 }
 

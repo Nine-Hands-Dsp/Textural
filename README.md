@@ -36,33 +36,17 @@ La LED du bouton prend la couleur du symbole du mode et clignote quand le son es
 - **Ctrl + glisser** (ou appui long sur REVERSE pour verrouiller) : Time Random, Size Random, Overlap Random, Regen Mix (Delay ↔ Granular), Pitch Random, Reverse Random.
 - **Alt + glisser** (ou appui long sur MODE) : Reverb Mix, Filter Cutoff (LP < midi < HP), Vibrato Rate, Reverb Decay, Quantize Pitch, Vibrato Depth.
 - **Ctrl + Alt + glisser** (ou clic sur la LED bleue) : Preset Scroll Mute, Trails, Output Mode, Footswitch Hold Mode, Output Gain.
-- **Tap tempo** : Ctrl + clic sur MODE (ou REVERSE verrouillé puis clic sur MODE), ou CC83.
+- **Tap tempo** : Ctrl + clic sur MODE (ou REVERSE verrouillé puis clic sur MODE), ou un CC appris (MIDI Learn : Tap Tempo).
 
 La ligne d'état sous « Textural » n'affiche que le réglage du potard en cours de rotation, dans la couleur du potard.
 
 ## MIDI
 
-**MIDI Learn** : clic droit sur une commande (potard dans la couche active : normale, Ctrl, Alt ou Ctrl + Alt ; REVERSE, MODE, footswitch, bouton preset) -> « MIDI Learn », puis bouger la pédale d'expression / appuyer sur le bouton MIDI ; « Clear MIDI » retire l'assignation. Le sous-menu MIDI liste toutes les commandes (dont Freeze et Tap Tempo) et « Reset MIDI to defaults » revient au tableau ci-dessous. Les assignations sont sauvegardées avec le projet.
+**MIDI Learn** : clic droit sur une commande (potard dans la couche active : normale, Ctrl, Alt ou Ctrl + Alt ; REVERSE, MODE, footswitch, bouton preset) -> « MIDI Learn », puis bouger la pédale d'expression / appuyer sur le bouton MIDI ; « Clear MIDI » retire l'assignation. Le sous-menu MIDI liste toutes les commandes (dont Freeze et Tap Tempo) et « Clear all MIDI assignments » efface toutes les assignations. Les assignations sont sauvegardées avec le projet.
 
 Program Change 1-8 = emplacements (2 = Live, 0 = Live aussi), 9 = Slow Attack Soundtrack. Dans la liste des presets du DAW : 1 Sea Synth … 8 Stardust Cloud, puis Slow Attack Soundtrack. Tous les paramètres sont aussi automatisables dans le DAW.
 
-| CC | Paramètre | CC | Paramètre |
-|---|---|---|---|
-| 14 | Time | 26 | Reverb Mix |
-| 15 | Size | 27 | Reverb Decay |
-| 16 | Overlap | 28 | Filter Cutoff |
-| 17 | Regen | 29 | Quantize Pitch |
-| 18 | Pitch | 30 | Vibrato Rate |
-| 19 | Mix | 31 | Vibrato Depth |
-| 20 | Time Random | 64 | Freeze (maintien) |
-| 21 | Size Random | 80 | Reverse |
-| 22 | Overlap Random | 81 | Mode |
-| 23 | Regen Mix | 82 | Effet on (≥ 64) / off |
-| 24 | Pitch Random | 83 | Tap tempo |
-| 25 | Reverse Random | 84 | Preset suivant |
-| 85 | Output Gain | 86 | Output Mode |
-| 87 | Trails | 88 | Footswitch Hold Mode |
-| 89 | Preset Scroll Mute | | |
+Aucun CC assigné par défaut : clic droit > MIDI > Learn.
 
 ## Presets d'usine
 
@@ -114,3 +98,5 @@ Les presets utilisateur sont enregistrés dans le projet du DAW et dans `%APPDAT
 - v1.2.0 : MIDI Learn au clic droit sur chaque commande (Clear MIDI, assignations sauvegardées avec le projet)
 
 - v1.3.0 : clic droit > Plugin size > Default size (new windows) : taille par défaut des nouvelles fenêtres au choix, comme dans Octopus
+
+- v1.3.1 : plus aucun CC MIDI assigné par défaut (tout passe par le MIDI Learn)
