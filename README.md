@@ -1,4 +1,4 @@
-# Textural (Studio Wiga) — VST3 granulaire pour Windows 11
+# Textural (NINE HANDS | DSP) — VST3 granulaire pour Windows 11
 
 Moteur de synthèse granulaire inspiré de la pédale MXR Textures M310 : trois modes (Delay, Auto Freeze, Layers), grains inversés, pitch ±2 octaves, régénération delay/granulaire, randomisations, reverb, filtre LP/HP 4 pôles, vibrato, tap tempo, trails, sorties Mono / Wet-Dry / Stéréo, 8 presets d'usine et contrôle MIDI complet.
 
@@ -8,7 +8,7 @@ Moteur de synthèse granulaire inspiré de la pédale MXR Textures M310 : trois 
 2. GitHub Actions compile automatiquement (onglet **Actions** → dernier run → *Artifacts*) :
    - `Textural-Setup-Windows` : installeur `Textural-Setup.exe` (copie le plugin dans `C:\Program Files\Common Files\VST3`) ;
    - `Textural-VST3-Windows` : le dossier `Textural.vst3` à copier soi-même dans `C:\Program Files\Common Files\VST3`.
-3. Relance un scan des plugins dans ton DAW : le plugin apparaît sous **Textural**, fabricant **Studio Wiga**.
+3. Relance un scan des plugins dans ton DAW : le plugin apparaît sous **Textural**, fabricant **NINE HANDS | DSP**.
 
 ## Les trois modes (bouton MODE, à droite de REVERSE)
 
@@ -87,7 +87,7 @@ Rouges :
 - **Filtre** : la résonance augmente quand on s'éloigne de midi, ce qui donne des balayages façon synthé.
 - **Mode Layers** : saturation douce de type synthé analogique.
 
-Les presets utilisateur sont enregistrés dans le projet du DAW et dans `%APPDATA%\Studio Wiga\Textural\UserPresets.xml`.
+Les presets utilisateur sont enregistrés dans le projet du DAW et dans `%APPDATA%\NINE HANDS | DSP\Textural\UserPresets.xml`.
 
 ## Versions
 

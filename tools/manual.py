@@ -1,4 +1,4 @@
-# Textural (Studio Wiga) - notice PDF bilingue (partie anglaise complete, puis partie francaise complete).
+# Textural (NINE HANDS | DSP) - notice PDF bilingue (partie anglaise complete, puis partie francaise complete).
 # Usage : python3 tools/manual.py [fichier PDF de sortie]   (defaut : docs/Textural_Manual_EN-FR_v<VERSION>.pdf)
 # Illustrations : tools/manual_assets/ (rendus reels du plugin repris de la notice 1.2.0). Les deux captures de menus
 # clic droit de la 1.2.0 (ancien menu de taille, CC d'usine, « Reset MIDI to defaults ») ont ete retirees : a refaire
@@ -8,12 +8,12 @@ import re as _re, os as _os
 VERSION = _re.search(r"project\(\w+ VERSION ([0-9.]+)", open(_os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "CMakeLists.txt")).read()).group(1)   # version du plugin
 NAME = "Textural"
 TITLE = "TEXTURAL"
-FOOTER = {"en": "Textural (Studio Wiga) · User manual · v" + VERSION, "fr": "Textural (Studio Wiga) · Notice d'utilisation · v" + VERSION}
+FOOTER = {"en": "Textural (NINE HANDS | DSP) · User manual · v" + VERSION, "fr": "Textural (NINE HANDS | DSP) · Notice d'utilisation · v" + VERSION}
 from reportlab.lib import colors
 ACC = colors.HexColor("#E0620C")
 H1COL = ACC; H2COL = colors.HexColor("#1B1D22")
 HCELLBG = colors.HexColor("#F4F1EC"); HCELLTXT = colors.HexColor("#1B1D22")
-# ---------- mise en page commune (style maison Studio Wiga) ----------
+# ---------- mise en page commune (style maison NINE HANDS | DSP) ----------
 import os, sys
 from PIL import Image
 from reportlab.lib.pagesizes import A4
@@ -92,7 +92,7 @@ def cover(t, cover_img, cover_w):
 
 def build(sections, title):
     doc = BaseDocTemplate(OUT, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm, topMargin=17 * mm, bottomMargin=18 * mm,
-                          title=title, author="Studio Wiga")
+                          title=title, author="NINE HANDS | DSP")
     lang = {"v": "en"}
     def deco(c, d):
         c.saveState()
@@ -147,7 +147,7 @@ T = {
  i_t="2. Installation",
  i=[("Windows 11", "Run <b>Textural-Setup.exe</b> (artifact <i>Textural-Setup-Windows</i>): it copies Textural.vst3 to <i>C:\\Program Files\\Common Files\\VST3</i>. Or copy the <b>Textural.vst3</b> folder there yourself (artifact <i>Textural-VST3-Windows</i>)."),
     ("macOS", "Unzip the <i>VST3-macOS</i> artifact and copy <b>Textural.vst3</b> into <i>~/Library/Audio/Plug-Ins/VST3/</i> (universal binary: Intel and Apple Silicon)."),
-    ("Reaper", "Options &gt; Preferences &gt; Plug-ins &gt; VST &gt; <b>Re-scan</b>. The plugin appears as <b>Textural</b> by <b>Studio Wiga</b>."),
+    ("Reaper", "Options &gt; Preferences &gt; Plug-ins &gt; VST &gt; <b>Re-scan</b>. The plugin appears as <b>Textural</b> by <b>NINE HANDS | DSP</b>."),
     ("First launch", "The pedal opens on preset 1 · Sea Synth. Drag a knob up or down to turn it: Shift = fine, double-click = default value, mouse wheel works too. While you turn a knob, its real value appears under the Textural logo, in the knob's colour.")],
  o_t="3. Interface overview",
  o=[["#", "Element", "Role"],
@@ -237,7 +237,7 @@ T = {
  st_cap="Status line during MIDI Learn: waiting, then confirmation.",
  w_t="7. Window and status line",
  w=["Right-click (outside a control) &gt; <b>Plugin size</b>: <b>60 %</b>, <b>75 %</b> or <b>100 %</b> (the current size is ticked); <i>(default)</i> is shown next to the default size. You can also drag the corner (proportions kept). The window can never be made smaller than 60 %.",
-    "<b>Plugin size &gt; Default size (new windows)</b> chooses the size at which every new Textural window opens (60 % at first). This setting is common to all instances and saved on your computer (<i>settings.xml</i> in the Studio Wiga\\Textural folder of your user data: %APPDATA% on Windows, ~/Library on macOS); the open window takes that size at once.",
+    "<b>Plugin size &gt; Default size (new windows)</b> chooses the size at which every new Textural window opens (60 % at first). This setting is common to all instances and saved on your computer (<i>settings.xml</i> in the NINE HANDS | DSP\\Textural folder of your user data: %APPDATA% on Windows, ~/Library on macOS); the open window takes that size at once.",
     "Each instance also remembers its own size in the project (the size its window had when the project was saved), and this size takes priority over the default size when the project is reopened. A new instance opens at the default size.",
     "The <b>status line</b> under the Textural logo shows nothing until you act: only the setting you are turning (in the knob's colour), the mode, the preset you load, a MIDI-controlled setting, and the MIDI Learn messages. It fades out after about 1.5 s."],
  mt=[["Menu item", "Use"],
@@ -250,7 +250,7 @@ T = {
      ["MIDI", "Learn for every function, Cancel MIDI learn, Clear all MIDI assignments."]],
  pr_t="8. Presets",
  pr=["Textural opens on preset 1. The PRESETS button steps through 1 → 2 → … → 8 → 1. Slot 2 is <b>Live</b>: your own current settings, remembered while you visit the other presets; it cannot be overwritten. Slow Attack Soundtrack is the 9th preset (DAW preset list, right-click menu or Program Change 9).",
-     "Your presets are stored in the DAW project and in <i>%APPDATA%\\Studio Wiga\\Textural\\UserPresets_v4.xml</i> (macOS: <i>~/Library/Studio Wiga/Textural/UserPresets_v4.xml</i>)."],
+     "Your presets are stored in the DAW project and in <i>%APPDATA%\\NINE HANDS | DSP\\Textural\\UserPresets_v4.xml</i> (macOS: <i>~/Library/NINE HANDS | DSP/Textural/UserPresets_v4.xml</i>)."],
  pr_hdr=["#", "Preset", "Mode", "TIME", "SIZE", "OVERLAP", "REGEN", "PITCH", "MIX"],
  pd=[("1. Sea Synth", "Warbly polyphonic granular synth: four detuned voices, soft swell, slow vibrato, warm low-pass. Play chords and let them ring; each new chord becomes a voice."),
      ("2. Live", "Your current knob, button and hidden settings, kept as you left them."),
@@ -282,7 +282,7 @@ T = {
      ["MIDI", "MIDI Learn on 29 functions (no CC assigned by default), saved with the project; Program Change 1-9; any channel"],
      ["Window", "Plugin size 60 % / 75 % / 100 %, default size of new windows to choose (60 % at first), never smaller than 60 %; resizable by the corner"],
      ["Stability", "Windows anti-freeze v2: the interface never blocks the host"], ["Version", VERSION]],
- sp_note="Inspired by the MXR Textures M310. MXR and Textures are trademarks of their owners; Textural is an independent personal project by Studio Wiga."),
+ sp_note="Inspired by the MXR Textures M310. MXR and Textures are trademarks of their owners; Textural is an independent personal project by NINE HANDS | DSP."),
 "fr": dict(
  lang="FRANÇAIS", sub="Moteur de synthèse granulaire &nbsp;·&nbsp; VST3 &nbsp;·&nbsp; Windows &amp; macOS", ver="Notice d'utilisation &nbsp;·&nbsp; version " + VERSION,
  p_t="1. Présentation",
@@ -298,7 +298,7 @@ T = {
  i_t="2. Installation",
  i=[("Windows 11", "Lance <b>Textural-Setup.exe</b> (artefact <i>Textural-Setup-Windows</i>) : il copie Textural.vst3 dans <i>C:\\Program Files\\Common Files\\VST3</i>. Ou copie toi-même le dossier <b>Textural.vst3</b> (artefact <i>Textural-VST3-Windows</i>)."),
     ("macOS", "Dézippe l'artefact <i>VST3-macOS</i> et copie <b>Textural.vst3</b> dans <i>~/Library/Audio/Plug-Ins/VST3/</i> (binaire universel : Intel et Apple Silicon)."),
-    ("Reaper", "Options &gt; Preferences &gt; Plug-ins &gt; VST &gt; <b>Re-scan</b>. Le plugin apparaît sous le nom <b>Textural</b>, fabricant <b>Studio Wiga</b>."),
+    ("Reaper", "Options &gt; Preferences &gt; Plug-ins &gt; VST &gt; <b>Re-scan</b>. Le plugin apparaît sous le nom <b>Textural</b>, fabricant <b>NINE HANDS | DSP</b>."),
     ("Premier lancement", "La pédale s'ouvre sur le preset 1 · Sea Synth. Glisse un potard vers le haut ou le bas : Maj = réglage fin, double-clic = valeur par défaut, la molette marche aussi. Pendant que tu tournes un potard, sa valeur réelle s'affiche sous le logo Textural, dans la couleur du potard.")],
  o_t="3. Vue d'ensemble de l'interface",
  o=[["#", "Élément", "Rôle"],
@@ -388,7 +388,7 @@ T = {
  st_cap="Ligne d'état pendant le MIDI Learn : attente, puis confirmation.",
  w_t="7. Fenêtre et ligne d'état",
  w=["Clic droit (hors commande) &gt; <b>Plugin size</b> : <b>60 %</b>, <b>75 %</b> ou <b>100 %</b> (la taille actuelle est cochée) ; <i>(default)</i> est indiqué à côté de la taille par défaut. Tu peux aussi tirer le coin (proportions conservées). La fenêtre ne peut jamais être plus petite que 60 %.",
-    "<b>Plugin size &gt; Default size (new windows)</b> choisit la taille d'ouverture de toutes les nouvelles fenêtres de Textural (60 % au départ). Ce réglage est commun à toutes les instances et enregistré sur l'ordinateur (<i>settings.xml</i> dans le dossier Studio Wiga\\Textural des données utilisateur : %APPDATA% sous Windows, ~/Library sous macOS) ; la fenêtre ouverte prend aussi cette taille tout de suite.",
+    "<b>Plugin size &gt; Default size (new windows)</b> choisit la taille d'ouverture de toutes les nouvelles fenêtres de Textural (60 % au départ). Ce réglage est commun à toutes les instances et enregistré sur l'ordinateur (<i>settings.xml</i> dans le dossier NINE HANDS | DSP\\Textural des données utilisateur : %APPDATA% sous Windows, ~/Library sous macOS) ; la fenêtre ouverte prend aussi cette taille tout de suite.",
     "Chaque instance mémorise aussi sa propre taille de fenêtre dans le projet (celle qu'avait sa fenêtre à l'enregistrement du projet), et cette taille reste prioritaire sur la taille par défaut à la réouverture du projet. Une nouvelle instance s'ouvre à la taille par défaut.",
     "La <b>ligne d'état</b> sous le logo Textural n'affiche rien tant que tu n'agis pas : seulement le réglage que tu tournes (dans la couleur du potard), le mode, le preset chargé, un réglage piloté en MIDI et les messages du MIDI Learn. Elle s'efface après environ 1,5 s."],
  mt=[["Élément du menu", "Rôle"],
@@ -401,7 +401,7 @@ T = {
      ["MIDI", "Learn pour chaque fonction, Cancel MIDI learn, Clear all MIDI assignments."]],
  pr_t="8. Presets",
  pr=["Textural s'ouvre sur le preset 1. Le bouton PRESETS fait défiler 1 → 2 → … → 8 → 1. L'emplacement 2 est <b>Live</b> : tes propres réglages en cours, gardés pendant que tu visites les autres presets ; il ne peut pas être écrasé. Slow Attack Soundtrack est le 9e preset (liste de presets du DAW, menu du clic droit ou Program Change 9).",
-     "Tes presets sont enregistrés dans le projet du DAW et dans <i>%APPDATA%\\Studio Wiga\\Textural\\UserPresets_v4.xml</i> (macOS : <i>~/Library/Studio Wiga/Textural/UserPresets_v4.xml</i>)."],
+     "Tes presets sont enregistrés dans le projet du DAW et dans <i>%APPDATA%\\NINE HANDS | DSP\\Textural\\UserPresets_v4.xml</i> (macOS : <i>~/Library/NINE HANDS | DSP/Textural/UserPresets_v4.xml</i>)."],
  pr_hdr=["#", "Preset", "Mode", "TIME", "SIZE", "OVERLAP", "REGEN", "PITCH", "MIX"],
  pd=[("1. Sea Synth", "Synthé granulaire polyphonique ondulant : quatre voix désaccordées, montée douce, vibrato lent, passe-bas chaud. Joue des accords et laisse-les sonner ; chaque nouvel accord devient une voix."),
      ("2. Live", "Tes réglages actuels de potards, boutons et paramètres cachés, gardés tels quels."),
@@ -433,7 +433,7 @@ T = {
      ["MIDI", "MIDI Learn sur 29 fonctions (aucun CC assigné par défaut), sauvegardé avec le projet ; Program Change 1-9 ; tous canaux"],
      ["Fenêtre", "Plugin size 60 % / 75 % / 100 %, taille par défaut des nouvelles fenêtres au choix (60 % au départ), jamais plus petite que 60 % ; redimensionnable par le coin"],
      ["Stabilité", "Anti-gel v2 de la fenêtre sous Windows : l'interface ne bloque jamais l'hôte"], ["Version", VERSION]],
- sp_note="Inspiré de la MXR Textures M310. MXR et Textures sont des marques de leurs propriétaires ; Textural est un projet personnel indépendant de Studio Wiga."),
+ sp_note="Inspiré de la MXR Textures M310. MXR et Textures sont des marques de leurs propriétaires ; Textural est un projet personnel indépendant de NINE HANDS | DSP."),
 }
 
 def section(lang):

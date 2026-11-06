@@ -79,7 +79,7 @@ TexturalAudioProcessorEditor::~TexturalAudioProcessorEditor() { stopTimer(); }
 // Avec certains pilotes (Intel notamment) la fenêtre du plugin cesse de se rafraîchir alors que
 // le DAW continue de tourner. Le moteur logiciel est stable partout et largement assez rapide ici.
 //
-// Anti-gel v2 (Studio Wiga) :
+// Anti-gel v2 (NINE HANDS | DSP) :
 //  1. moteur de rendu logiciel forcé sur Windows, appliqué à chaque nouvelle fenêtre hôte (peer)
 //     et revérifié toutes les secondes, jamais en boucle ;
 //  2. aucun calcul lourd dans paint() : le fond + la façade sont composés à la taille de la fenêtre
@@ -654,7 +654,7 @@ void TexturalAudioProcessorEditor::showMenu (int learnIdx)
         if (lt >= 0) m.addItem (1200, "Cancel MIDI learn");
         m.addSeparator();
     }
-    m.addSectionHeader ("Textural (Studio Wiga)");
+    m.addSectionHeader ("Textural (NINE HANDS | DSP)");
     {
         // Plugin size : taille de cette fenêtre + taille par défaut des nouvelles fenêtres (comme Octopus)
         const char* names[kNumSizes] = { "60 %", "75 %", "100 %" };

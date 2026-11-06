@@ -3,7 +3,7 @@
 #include "PluginProcessor.h"
 
 //==============================================================================
-//  Textural editor: the Studio Wiga faceplate with vector knobs, buttons and
+//  Textural editor: the NINE HANDS | DSP faceplate with vector knobs, buttons and
 //  LEDs drawn in code. Everything is laid out in "design units" (595 x 1000)
 //  and scaled to the window (default height 493 px).
 //
@@ -30,7 +30,7 @@ public:
     void mouseDoubleClick (const juce::MouseEvent&) override;
     void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
 
-    // Window: same size and proportions as Freeze Shimmer (Studio Wiga), 780 x 990 artwork.
+    // Window: same size and proportions as Freeze Shimmer (NINE HANDS | DSP), 780 x 990 artwork.
     // Default 388 x 493 px, menu sizes 60 % / 75 % / 100 % = 592 / 740 / 986 px, drag up to 1479 px.
     static constexpr float kDesignH = 1000.0f;
     static constexpr float kDesignW = 780.0f * kDesignH / 990.0f;

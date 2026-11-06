@@ -16,7 +16,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(JUCE)
 
 juce_add_plugin(Textural
-    COMPANY_NAME                "Studio Wiga"
+    COMPANY_NAME                "NINE HANDS | DSP"
     PRODUCT_NAME                "Textural"
     VERSION                     1.3.1
     PLUGIN_MANUFACTURER_CODE    Swga

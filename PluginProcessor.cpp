@@ -1,4 +1,5 @@
 #include "PluginProcessor.h"
+#include "NineHandsFolder.h"
 #include "PluginEditor.h"
 
 using namespace juce;
@@ -198,7 +199,7 @@ void TexturalAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
 }
 
 //==============================================================================
-// Anti-gel v2 (Studio Wiga): no host call (setValueNotifyingHost, triggerAsyncUpdate), no string
+// Anti-gel v2 (NINE HANDS | DSP): no host call (setValueNotifyingHost, triggerAsyncUpdate), no string
 // lookup and no allocation on the audio thread. MIDI values are queued; the processor timer
 // (60 Hz, message thread) sends them to the host and handles presets / tap tempo.
 void TexturalAudioProcessor::handleMidi (const MidiBuffer& midi)
@@ -534,7 +535,7 @@ std::map<String, float> TexturalAudioProcessor::stringToSnapshot (const String& 
 File TexturalAudioProcessor::userPresetFile() const
 {
     return File::getSpecialLocation (File::userApplicationDataDirectory)
-             .getChildFile ("Studio Wiga").getChildFile ("Textural").getChildFile ("UserPresets_v4.xml");
+             .getChildFile (nhd::folderName()).getChildFile ("Textural").getChildFile ("UserPresets_v4.xml");
 }
 
 void TexturalAudioProcessor::loadUserPresetFile()

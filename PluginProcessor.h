@@ -7,7 +7,7 @@
 #include <map>
 
 //==============================================================================
-//  Textural (Studio Wiga) - granular synth engine pedal, VST3
+//  Textural (NINE HANDS | DSP) - granular synth engine pedal, VST3
 //==============================================================================
 class TexturalAudioProcessor : public juce::AudioProcessor,
                                private juce::Timer
@@ -112,7 +112,7 @@ private:
     std::array<std::map<juce::String, float>, 8> userPresets;
     std::map<juce::String, float> liveSnapshot, loadedSnapshot;
 
-    // Anti-gel v2 (Studio Wiga): MIDI CC values queued by the audio thread (index = ccMap() entry),
+    // Anti-gel v2 (NINE HANDS | DSP): MIDI CC values queued by the audio thread (index = ccMap() entry),
     // sent to the host by the processor timer (60 Hz, message thread)
     static constexpr int kMaxQueued = 32;
     std::atomic<float> pendingValue[kMaxQueued];

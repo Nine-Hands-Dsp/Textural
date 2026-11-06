@@ -2,7 +2,7 @@
 [Setup]
 AppName=Textural
 AppVersion=1.2.0
-AppPublisher=Studio Wiga
+AppPublisher=NINE HANDS | DSP
 DefaultDirName={commoncf64}\VST3
 DisableDirPage=yes
 DisableProgramGroupPage=yes
@@ -14,7 +14,7 @@ PrivilegesRequired=admin
 Compression=lzma2
 SolidCompression=yes
 Uninstallable=yes
-UninstallDisplayName=Textural (Studio Wiga) VST3
+UninstallDisplayName=Textural (NINE HANDS | DSP) VST3
 
 [Files]
 Source: "dist\Textural.vst3\*"; DestDir: "{commoncf64}\VST3\Textural.vst3"; Flags: recursesubdirs createallsubdirs ignoreversion

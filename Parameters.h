@@ -2,7 +2,7 @@
 #include <JuceHeader.h>
 
 //==============================================================================
-//  Textural (Studio Wiga) - parameter IDs, value mappings and MIDI CC map
+//  Textural (NINE HANDS | DSP) - parameter IDs, value mappings and MIDI CC map
 //==============================================================================
 namespace PID
 {
