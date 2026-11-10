@@ -24,6 +24,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 KIT = os.path.join(ROOT, 'assets', 'kit')
 SCR = os.environ.get('SCRATCH', '/tmp')
+FINAL = os.environ.get('FINAL', '') == '1'      # 1 : fond du plugin + sprites + Layout.h (sans les pieces dessinees par le plugin)
 
 AS = 2
 UW, UH = 760, 958
@@ -138,7 +139,7 @@ LOGO_W = 200.0
 LOGO_C = (CX, 0.5 * (FS[1] + FS_FLATS / 2 + PY0 + PH))   # logo en bas, a egale distance du footswitch et du bas de la coque
 PILL_W, PILL_H = 400.0 / SC, 38.0 / SC              # pastille de reference (Strong Pickle) : 400 x 38 dans le repere 900
 PILL = (CX - PILL_W / 2, P(0, 1322)[1] - PILL_H / 2, PILL_W, PILL_H)
-LED_R = 10.5                                        # LED 5 mm
+LED_R = 12.0                                        # LED (photo fournie), agrandie (demande nov. 2026)
 
 # ------------------------------------------------------------------ 1. fond et boitier
 YY, XX = np.mgrid[0:H, 0:W].astype(np.float32)
@@ -294,16 +295,6 @@ logo_a = np.zeros((H, W), np.float32)
 lx0, ly0 = int(round((LOGO_C[0] - LOGO_W / 2) * AS)), int(round((LOGO_C[1] - LOGO_H / 2) * AS))
 logo_a[ly0:ly0 + lg.shape[0], lx0:lx0 + lg.shape[1]] = lg[..., 3] / 255.0
 ink = np.maximum(ink, logo_a)
-# le motif de particules s'efface sous la serigraphie (reserve fine), puis encre noire satinee
-res = cv2.dilate((ink > 0.05).astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))).astype(np.float32)
-res = cv2.GaussianBlur(res, (0, 0), 1.0)
-res = cv2.dilate((ink > 0.05).astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (int(8 * AS) | 1, int(8 * AS) | 1))).astype(np.float32)
-res = cv2.GaussianBlur(res, (0, 0), 1.5 * AS)
-img = img * (1 - (res * ink_part)[..., None]) + (img / np.maximum(1e-3, 1 - ink_part[..., None] + ink_part[..., None] * pa_c / 230.0) * 0 + encl * body[..., None] * 0)[...] * 0 + (res * ink_part)[..., None] * (encl * body[..., None] + grain[..., None] * 0)
-ink_a = ink * on_top
-ink_col = np.array([22.0, 21.0, 22.0])
-img = img * (1 - ink_a[..., None]) + ink_col * ink_a[..., None]
-
 # symboles des modes (vectoriels, couleurs de l'ancien visuel)
 mode_lay = Image.new('RGBA', (KW, KH), (0, 0, 0, 0)); md = ImageDraw.Draw(mode_lay)
 VEC['modes'] = []
@@ -329,7 +320,18 @@ for ccx in (1102.7, 1137.3):
     VEC['modes'].append(['rings', x, y, [23.0 * KS_, 15.6 * KS_, 8.4 * KS_], 3.6 * KS_, R_])
 ml = np.asarray(mode_lay.resize((W, H), Image.LANCZOS)).astype(np.float32)
 ma = ml[..., 3:4] / 255.0 * on_top[..., None] * 0.96
-img = img * (1 - ma) + ml[..., :3] * ma
+
+# le motif de particules s'efface sous la serigraphie (reserve fine), puis encre noire satinee
+res = cv2.dilate((ink > 0.05).astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))).astype(np.float32)
+res = cv2.GaussianBlur(res, (0, 0), 1.0)
+res = cv2.dilate(((ink > 0.05) | (ma[..., 0] > 0.05)).astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (int(8 * AS) | 1, int(8 * AS) | 1))).astype(np.float32)
+res = cv2.GaussianBlur(res, (0, 0), 1.5 * AS)
+img = img * (1 - (res * ink_part)[..., None]) + (img / np.maximum(1e-3, 1 - ink_part[..., None] + ink_part[..., None] * pa_c / 230.0) * 0 + encl * body[..., None] * 0)[...] * 0 + (res * ink_part)[..., None] * (encl * body[..., None] + grain[..., None] * 0)
+ink_a = ink * on_top
+ink_col = np.array([22.0, 21.0, 22.0])
+if not FINAL:                                   # version finale : serigraphie et symboles dessines en vectoriel par le plugin
+    img = img * (1 - ink_a[..., None]) + ink_col * ink_a[..., None]
+    img = img * (1 - ma) + ml[..., :3] * ma
 
 img += (fbm((H, W), [1], [1.0], 22) * body)[..., None]
 
@@ -389,7 +391,9 @@ def _knob_polar(name):
         lb = num / np.maximum(den, 1e-3) + 1.0
         lb = cv2.GaussianBlur(lb, (0, 0), sigmaX=6, sigmaY=0.1)
         lb[den < 0.2] = np.nan
-        lb = np.where(np.isnan(lb), np.nanmean(lb, axis=0, keepdims=True), lb)
+        with np.errstate(all='ignore'):
+            fillv = np.nanmean(lb, axis=0, keepdims=True)
+        lb = np.where(np.isnan(lb), np.nan_to_num(fillv, nan=1.0), lb)
         _KPOL[name] = (pol, lb, RR, im.shape[:2], ind)
     return _KPOL[name]
 def knob_render(name, ang, blur_deg=0.0):
@@ -405,7 +409,9 @@ def knob_render(name, ang, blur_deg=0.0):
         rp[..., :3] *= np.clip(np.nan_to_num(ratio, nan=1.0), 0.72, 1.4)[..., None]
         acc += rp
     acc /= len(offs)
+    acc = np.nan_to_num(acc, nan=0.0, posinf=0.0, neginf=0.0)
     out = cv2.warpPolar(acc, (ww, hh), KNOB_C, RR, cv2.WARP_POLAR_LINEAR | cv2.WARP_INVERSE_MAP | cv2.INTER_CUBIC)
+    out = np.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
     _yy, _xx = np.mgrid[0:hh, 0:ww]
     out[np.hypot(_xx - KNOB_C[0], _yy - KNOB_C[1]) > RR - 2] = 0     # rien hors du disque polaire
     a = np.clip(out[..., 3:4] / 255.0, 0, 1)
@@ -436,37 +442,41 @@ for (x, y, _, _) in KNOBS:
 occlusion(_m)
 # valeurs du preset 1 (Sea Synth) pour l'apercu
 VALS = [0.3, 0.25, 0.9, 0.8, 0.5, 0.58]
-for (x, y, _, orange), v in zip(KNOBS, VALS):
+for (x, y, _, orange), v in (zip(KNOBS, VALS) if not FINAL else []):
     spr, S_ = knob_sprite('knob_orange_photo.png' if orange else 'knob_black_photo.png', KNOB_R, v)
     over(img, spr, (x - S_ / 2) * AS, (y - S_ / 2) * AS)
 
 # ------------------------------------------------------------------ 5. LED 5 mm (photo fournie) : eteinte / allumee, recoloree
 LEDP = load('led5mm_red_photo.png')
-LED_C, LED_RPX = (74.5, 74.5), 72.0
+# detourage : les pixels du bord (alpha partiel, restes du fond blanc de la photo) prennent la couleur du dome voisin
+_edge = (LEDP[..., 3] < 250).astype(np.uint8) * 255
+LEDP[..., :3] = cv2.inpaint(np.clip(LEDP[..., :3], 0, 255).astype(np.uint8), _edge, 3, cv2.INPAINT_TELEA).astype(np.float32)
+LED_C, LED_RPX = (74.5, 74.5), 47.0          # centre et rayon du dome dans la photo
 def recolor(rgb, col):
-    """photo rouge -> autre couleur : la luminance garde le relief du dome, la teinte change"""
-    lum = rgb.max(2, keepdims=True) / 255.0
-    core = np.clip((rgb.min(2, keepdims=True) - 40) / 160.0, 0, 1)           # coeur clair
-    c = np.array(col, np.float32)
-    return np.clip(c * lum * 1.05 + (255 - c) * core * 0.85, 0, 255)
+    """photo rouge -> autre couleur par rotation de teinte : reflets, coeur et relief du dome de la photo conserves"""
+    hsv = cv2.cvtColor(np.clip(rgb, 0, 255).astype(np.uint8), cv2.COLOR_RGB2HSV).astype(np.float32)
+    th = cv2.cvtColor(np.uint8([[col]]), cv2.COLOR_RGB2HSV)[0, 0].astype(np.float32)
+    hsv[..., 0] = (hsv[..., 0] - 0.0 + th[0]) % 180.0                    # la photo est rouge (teinte ~0)
+    return cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2RGB).astype(np.float32)
 def led_sprite(col, on, R_units=LED_R):
+    """LED = la photo fournie, telle quelle (allumee) ; eteinte = meme dome assombri, reflet de la piece garde"""
     rgb = LEDP[..., :3]; a = LEDP[..., 3]
-    c = recolor(rgb, col)
+    c = rgb.copy() if tuple(col) == (255, 40, 30) else recolor(rgb, col)
     if not on:
-        lum = rgb.mean(2, keepdims=True) / 255.0
-        c = np.array(col, np.float32) * 0.16 + 70 * lum * np.array([0.9, 0.9, 0.95]) * 0.5
+        lum = c.mean(2, keepdims=True)
+        c = c * 0.20 + lum * 0.10
         hh, ww = a.shape; yy, xx = np.mgrid[0:hh, 0:ww]
-        hl = np.exp(-(((xx - 52) / 14.0) ** 2 + ((yy - 44) / 10.0) ** 2))[..., None]
-        c = c + hl * 120
-    S_ = 2 * R_units * 1.6; n = int(round(S_ * AS)); k = R_units * AS / LED_RPX
+        hl = np.exp(-(((xx - 60) / 16.0) ** 2 + ((yy - 40) / 11.0) ** 2))[..., None]
+        c = c + hl * 95
+    S_ = 2 * R_units * 1.45; n = int(round(S_ * AS)); k = R_units * AS / LED_RPX
     rgb2, a2 = place(np.dstack([c, a]).astype(np.float32), LED_C, k, n)
-    # bague sombre d'encastrement
+    # fin joint sombre d'encastrement (la LED reste bien visible, pas de grosse bague)
     yy, xx = np.mgrid[0:n, 0:n].astype(np.float32); rr = np.hypot(xx + 0.5 - n / 2, yy + 0.5 - n / 2) / (R_units * AS)
-    seat = np.clip((1.16 - rr) * R_units * AS, 0, 1) * (1 - a2)
-    rgb2 = rgb2 * a2[..., None] + np.array([30.0, 29.0, 30.0]) * seat[..., None]
+    seat = np.clip((1.06 - rr) * R_units * AS, 0, 1) * (1 - a2)
+    rgb2 = rgb2 * a2[..., None] + np.array([38.0, 36.0, 36.0]) * seat[..., None]
     aa = np.clip(a2 + seat, 0, 1)
     rgb2 = np.where(aa[..., None] > 1e-4, rgb2 / np.maximum(aa, 1e-4)[..., None], 0)
-    return with_shadow(rgb2, aa, 2 * R_units * AS, 0.35), S_
+    return with_shadow(rgb2, aa, 2 * R_units * AS, 0.30, 0.25, 0.5), S_
 def led_glow(c, col, strength=1.0, GR=60.0):
     x0p, y0p = round((c[0] - GR) * AS), round((c[1] - GR) * AS); size = round(2 * GR * AS)
     reg = img[y0p:y0p + size, x0p:x0p + size].astype(np.float64)
@@ -474,13 +484,14 @@ def led_glow(c, col, strength=1.0, GR=60.0):
     d = np.hypot((xx + 0.5) / AS - GR, (yy + 0.5) / AS - GR)
     h1, h2 = 6.0, 22.0
     E = 1.0 * h1 ** 3 / (d ** 2 + h1 ** 2) ** 1.5 + 0.16 * h2 ** 3 / (d ** 2 + h2 ** 2) ** 1.5
-    E *= np.clip((GR - d) / 20.0, 0, 1) * strength; E[d < LED_R * 1.1] = 0
+    E *= np.clip((GR - d) / 20.0, 0, 1) * strength; E[d < LED_R * 0.9] = 0
     cc = np.array(col) / 255.0
     lit = reg * (1 + E[..., None] * (cc * 1.6 - 0.25 * (1 - cc)))
     img[y0p:y0p + size, x0p:x0p + size] = np.clip(lit, 0, 255)
 
 LEDS = [(REV_LED, (40, 200, 255), False), (MODE_LED, (255, 40, 30), True), (STATUS_LED, (40, 110, 255), True)]
-for (c, col, on) in LEDS:
+IMG_NO_LED = img.copy()
+for (c, col, on) in (LEDS if not FINAL else []):
     if on: led_glow(c, col, 0.9)
     spr, S_ = led_sprite(col, on)
     over(img, spr, (c[0] - S_ / 2) * AS, (c[1] - S_ / 2) * AS)
@@ -496,6 +507,7 @@ over(img, with_shadow(rgb, a, FS_FLATS * AS, 0.62), x0p, y0p)
 
 # ------------------------------------------------------------------ 7. pastille barre de presets (Strong Pickle) : esquisse de l'apercu
 px0, py0, pw_, ph_ = PILL
+PRE_PILL = img.copy()
 pill_sd = rrect_sd(UX, UY, px0, py0, pw_, ph_, ph_ / 2)
 pm_ = np.clip(0.5 - pill_sd * AS, 0, 1)
 edge = np.clip(0.5 - np.abs(pill_sd + 0.6) * AS, 0, 1)
