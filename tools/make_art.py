@@ -366,13 +366,54 @@ def knob_parts(name):
     bodyimg = np.dstack([np.clip(body_, 0, 255), a])
     return bodyimg, ind, C, 554.0
 
-def knob_sprite(name, R_units, value):
-    bodyimg, ind, C, RPX = knob_parts(name)
-    S_ = 2 * R_units * 1.45; n = int(round(S_ * AS)); k = R_units * AS / RPX
-    rgb, a = place(bodyimg, C, k, n)
-    spr = with_shadow(rgb, a, 2 * R_units * AS, 0.66)
+# Potard entier qui tourne (chapeau, index ET couronne crantee), lumiere fixe :
+# en coordonnees polaires autour du centre, l'image tourne (decalage en angle) puis est re-eclairee :
+# I(phi) = I0(phi - theta) * Lb(phi) / Lb(phi - theta), Lb = luminance moyennee sur un cran (36 degres, 10 crans).
+# Le detail (crans, cuir, index) tourne ; l'eclairage d'ensemble (haut gauche clair, bas droit sombre) reste en place.
+# Flou de mouvement : moyenne de positions voisines en angle (blur_deg = angle parcouru pendant l'image).
+from scipy.ndimage import uniform_filter1d
+_KPOL = {}
+KNOB_C, KNOB_RPX, NA = (648.0, 651.0), 554.0, 2880          # centre / rayon dans les photos, 8 lignes par degre
+def _knob_polar(name):
+    if name not in _KPOL:
+        bodyimg, ind, _, _ = knob_parts(name)                 # potard sans son index (secteur rempli par un cran voisin)
+        im = bodyimg; pm = im.copy(); pm[..., :3] *= pm[..., 3:4] / 255.0
+        RR = int(KNOB_RPX * 1.06)
+        pol = cv2.warpPolar(pm, (RR, NA), KNOB_C, RR, cv2.WARP_POLAR_LINEAR | cv2.INTER_CUBIC)
+        lum = pol[..., :3].mean(2) + 1.0
+        lb = uniform_filter1d(lum, size=NA // 10, axis=0, mode='wrap')
+        lb = cv2.GaussianBlur(lb, (0, 0), sigmaX=6, sigmaY=0.1)
+        _KPOL[name] = (pol, lb, RR, im.shape[:2], ind)
+    return _KPOL[name]
+def knob_render(name, ang, blur_deg=0.0):
+    """potard tourne de ang degres (sens horaire, 0 = index en haut) ; renvoie rgba non premultiplie (taille photo)"""
+    pol, lb, RR, (hh, ww), ind = _knob_polar(name)
+    nb = max(1, int(round(abs(blur_deg) / 0.75))) if blur_deg else 1
+    offs = np.linspace(-blur_deg / 2, blur_deg / 2, nb) if nb > 1 else [0.0]
+    acc = np.zeros_like(pol)
+    for o in offs:
+        k = int(round((ang + o) * NA / 360.0))
+        rp = np.roll(pol, k, axis=0)
+        ratio = lb / np.roll(lb, k, axis=0)
+        rp[..., :3] *= np.clip(ratio, 0.55, 1.8)[..., None]
+        acc += rp
+    acc /= len(offs)
+    out = cv2.warpPolar(acc, (ww, hh), KNOB_C, RR, cv2.WARP_POLAR_LINEAR | cv2.WARP_INVERSE_MAP | cv2.INTER_CUBIC)
+    _yy, _xx = np.mgrid[0:hh, 0:ww]
+    out[np.hypot(_xx - KNOB_C[0], _yy - KNOB_C[1]) > RR - 2] = 0     # rien hors du disque polaire
+    a = np.clip(out[..., 3:4] / 255.0, 0, 1)
+    rgb = np.where(a > 1e-4, out[..., :3] / np.maximum(a, 1e-4), 0)
+    return np.dstack([np.clip(rgb, 0, 255), a[..., 0] * 255]).astype(np.float32)
+
+def knob_sprite(name, R_units, value, blur_deg=0.0):
+    S_ = 2 * R_units * 1.45; n = int(round(S_ * AS)); k = R_units * AS / KNOB_RPX
     ang = -150 + 300 * value
-    irgb, ia = place(ind, C, k, n, ang)
+    img_ = knob_render(name, ang, blur_deg)
+    rgb, a = place(img_, KNOB_C, k, n)
+    spr = with_shadow(rgb, a, 2 * R_units * AS, 0.66)
+    # index : tourne avec le potard, garde sa propre lumiere (creme), net (il n'a pas de crans)
+    ind = _knob_polar(name)[4]
+    irgb, ia = place(ind, KNOB_C, k, n, ang)
     ia = ia * a
     spr[..., :3] = spr[..., :3] * (1 - ia[..., None]) + irgb * ia[..., None]
     return spr, S_
