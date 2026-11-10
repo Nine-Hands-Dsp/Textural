@@ -272,7 +272,7 @@ JACK_Y = float(0.5 * (min(_tys) + STATUS_LED[1] + LED_R * 1.16))
 text(PX0 + 22, JACK_Y, 'OUT', f_io, 2.0, 90)
 text(PX0 + PW - 22, JACK_Y, 'IN', f_io, 2.0, 90)
 # LED d'etat centree entre le bas du titre et le haut de la barre de presets (jacks inchanges)
-STATUS_LED = (STATUS_LED[0], float(0.5 * (max(_tys) + PILL[1])))
+STATUS_LED = (CX, float(0.5 * (max(_tys) + PILL[1])))          # LED sur l'axe vertical de la pedale (demande nov. 2026)
 print('LED : ecart titre', round(STATUS_LED[1] - max(_tys), 2), 'ecart barre', round(PILL[1] - STATUS_LED[1], 2))
 tl = Image.new('L', (KW, KH), 0); tdr = ImageDraw.Draw(tl)
 for i, pts in enumerate(title_paths):
@@ -292,7 +292,7 @@ ys, xs = np.nonzero(lg[..., 3] > 10); lg = lg[ys.min():ys.max() + 1, xs.min():xs
 lg = cv2.resize(lg, (int(LOGO_W * AS), int(round(lg.shape[0] * LOGO_W * AS / lg.shape[1]))), interpolation=cv2.INTER_AREA)
 LOGO_H = lg.shape[0] / AS
 # footswitch centre entre le bas de la barre de presets et le haut du logo (logo garde sa place)
-FS = (FS[0], float(0.5 * (PILL[1] + PILL[3] + LOGO_C[1] - LOGO_H / 2)))
+FS = (CX, float(0.5 * (PILL[1] + PILL[3] + LOGO_C[1] - LOGO_H / 2)))   # sur l'axe de la pedale
 print('footswitch : ecart barre', round(FS[1] - FS_FLATS / 2 - PILL[1] - PILL[3], 2), 'ecart logo', round(LOGO_C[1] - LOGO_H / 2 - FS[1] - FS_FLATS / 2, 2))
 logo_a = np.zeros((H, W), np.float32)
 lx0, ly0 = int(round((LOGO_C[0] - LOGO_W / 2) * AS)), int(round((LOGO_C[1] - LOGO_H / 2) * AS))
@@ -527,6 +527,7 @@ od.ellipse((dot - rr, cy - rr, dot + rr, cy + rr), fill=(0, 208, 96, 255))
 ova = np.asarray(ov).astype(np.float32)
 over(img, ova, 0, 0)
 
+if FINAL: img = PRE_PILL                        # la pastille est dessinee par le plugin
 # ------------------------------------------------------------------ 8. embases jack (kit)
 alpha = body.copy()
 for side in (-1, 1):
