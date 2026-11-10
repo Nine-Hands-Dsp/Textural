@@ -267,7 +267,7 @@ title_paths = [[(x, y + _dy) for x, y in p_] for p_ in title_paths]
 print('titre : ecart haut', round(min(_ys) + _dy - _pb, 2), 'ecart bas', round(_lt - max(_ys) - _dy, 2))
 # jacks et IN / OUT au niveau du groupe titre + LED (milieu entre le haut du titre et le bas de la LED)
 _tys = [y for p_ in title_paths for _, y in p_]
-JACK_Y = 0.5 * (min(_tys) + STATUS_LED[1] + LED_R * 1.16)
+JACK_Y = float(0.5 * (min(_tys) + STATUS_LED[1] + LED_R * 1.16))
 text(PX0 + 22, JACK_Y, 'OUT', f_io, 2.0, 90)
 text(PX0 + PW - 22, JACK_Y, 'IN', f_io, 2.0, 90)
 tl = Image.new('L', (KW, KH), 0); tdr = ImageDraw.Draw(tl)
