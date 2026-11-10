@@ -135,7 +135,7 @@ FS = (FS[0], FS[1] - 65.0 * PH / OUT_H)              # remonte de 50 px puis 15 
 FS_FLATS = 100.0
 JACK_Y = P(0, 840)[1]
 TITLE_BOX = (325, 1165, 890, 1245)                  # titre dans l'ancien visuel (px)
-LOGO_W = 200.0
+LOGO_W = 180.0                                      # logo reduit de 10 % (demande nov. 2026)
 LOGO_C = (CX, 0.5 * (FS[1] + FS_FLATS / 2 + PY0 + PH))   # logo en bas, a egale distance du footswitch et du bas de la coque
 PILL_W, PILL_H = 400.0 / SC, 38.0 / SC              # pastille de reference (Strong Pickle) : 400 x 38 dans le repere 900
 PILL = (CX - PILL_W / 2, P(0, 1322)[1] - PILL_H / 2, PILL_W, PILL_H)
@@ -291,6 +291,9 @@ lg = svg_png(os.path.join(ROOT, 'assets', 'NineHands_Logo_Black.svg'), int(LOGO_
 ys, xs = np.nonzero(lg[..., 3] > 10); lg = lg[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
 lg = cv2.resize(lg, (int(LOGO_W * AS), int(round(lg.shape[0] * LOGO_W * AS / lg.shape[1]))), interpolation=cv2.INTER_AREA)
 LOGO_H = lg.shape[0] / AS
+# footswitch centre entre le bas de la barre de presets et le haut du logo (logo garde sa place)
+FS = (FS[0], float(0.5 * (PILL[1] + PILL[3] + LOGO_C[1] - LOGO_H / 2)))
+print('footswitch : ecart barre', round(FS[1] - FS_FLATS / 2 - PILL[1] - PILL[3], 2), 'ecart logo', round(LOGO_C[1] - LOGO_H / 2 - FS[1] - FS_FLATS / 2, 2))
 logo_a = np.zeros((H, W), np.float32)
 lx0, ly0 = int(round((LOGO_C[0] - LOGO_W / 2) * AS)), int(round((LOGO_C[1] - LOGO_H / 2) * AS))
 logo_a[ly0:ly0 + lg.shape[0], lx0:lx0 + lg.shape[1]] = lg[..., 3] / 255.0
@@ -563,3 +566,98 @@ json.dump({'frame': [OUT_W / 2, OUT_H / 2], 'knobs': [[X(k[0]), Y(k[1]), KNOB_R 
            'fs': [X(FS[0]), Y(FS[1])], 'pill': [X(PILL[0]), Y(PILL[1]), PILL[2] * SC, PILL[3] * SC], 'jackY': Y(JACK_Y),
            'logo': [X(LOGO_C[0]), Y(LOGO_C[1]), LOGO_W * SC]}, open(os.path.join(ROOT, 'design', 'layout_v2.json'), 'w'), indent=1)
 print('ok', PW, PH, JACK_PROT)
+
+# ====================================================================== 10. sorties du plugin (FINAL=1)
+if FINAL:
+    OUTD = ROOT
+    # fond : coque + particules + footswitch + jacks (+ ombres des potards) ; serigraphie, potards, LEDs et pastille
+    # sont dessines par le plugin (vectoriel / sprites)
+    Image.fromarray(np.dstack([out_rgb, out_a * 255]).astype(np.uint8), 'RGBA').save(os.path.join(OUTD, 'background.png'), optimize=True)
+    PU = 2.0                                     # pixels de sprite par unite du plugin (repere 617,5 x 900)
+    def X(v): return (v - CROP_X0) * SC
+    def Y(v): return (v - PY0) * SC
+
+    # --- potards : la couronne a 10 crans (36 degres) -> le corps est periodique : 36 images nettes (1 degre),
+    #     36 images en flou partiel (0,6 cran), 1 image en flou complet (un cran entier, invariant par rotation)
+    KR = KNOB_R * SC                             # rayon (unites du plugin)
+    S_P = 2 * KR * 1.45; NPX = int(round(S_P * PU)); kk = KR * PU / KNOB_RPX
+    NF = 36
+    def body_frame(name, ang, blur):
+        rgb, a = place(knob_render(name, ang, blur), KNOB_C, kk, NPX)
+        return with_shadow(rgb, a, 2 * KR * PU, 0.42, 0.22, 0.52)
+    for nm, tag in (('knob_black_photo.png', 'black'), ('knob_orange_photo.png', 'orange')):
+        frames = [body_frame(nm, i * 36.0 / NF, 0.0) for i in range(NF)]
+        frames += [body_frame(nm, i * 36.0 / NF, 21.6) for i in range(NF)]
+        frames += [body_frame(nm, 0.0, 36.0)]
+        strip = np.concatenate(frames, 0)
+        Image.fromarray(np.clip(strip, 0, 255).astype(np.uint8), 'RGBA').save(os.path.join(OUTD, f'knob_{tag}.png'), optimize=True)
+        ind = _knob_polar(nm)[4]
+        irgb, ia = place(ind, KNOB_C, kk, NPX, 0.0)
+        Image.fromarray(np.dstack([np.clip(irgb, 0, 255), ia * 255]).astype(np.uint8), 'RGBA').save(os.path.join(OUTD, f'knob_index_{tag}.png'), optimize=True)
+        print('potard', tag, strip.shape)
+
+    # --- LEDs (photo fournie) : eteinte / allumee par couleur ; halos = facade eclairee (calque alpha)
+    LED_COLS = {'cyan': (0, 213, 255), 'green': (57, 255, 46), 'orange': (255, 123, 0), 'red': (255, 40, 30), 'blue': (40, 110, 255)}
+    ASL = AS
+    for nm, col in LED_COLS.items():
+        for on in (0, 1):
+            spr, LS = led_sprite(col, bool(on))
+            Image.fromarray(np.clip(spr, 0, 255).astype(np.uint8), 'RGBA').save(os.path.join(OUTD, f'led_{nm}_{"on" if on else "off"}.png'), optimize=True)
+    GR = 60.0
+    def glow_layer(c, col, fn):
+        x0p, y0p = round((c[0] - GR) * AS), round((c[1] - GR) * AS); size = round(2 * GR * AS)
+        reg = IMG_NO_LED[y0p:y0p + size, x0p:x0p + size].astype(np.float64)
+        yy, xx = np.mgrid[0:size, 0:size].astype(np.float64)
+        d = np.hypot((xx + 0.5) / AS - GR, (yy + 0.5) / AS - GR)
+        h1, h2 = 6.0, 22.0
+        E = 1.0 * h1 ** 3 / (d ** 2 + h1 ** 2) ** 1.5 + 0.16 * h2 ** 3 / (d ** 2 + h2 ** 2) ** 1.5
+        E *= np.clip((GR - d) / 20.0, 0, 1) * 0.9; E[d < LED_R * 0.9] = 0
+        cc = np.array(col) / 255.0
+        lit = np.clip(reg * (1 + E[..., None] * (cc * 1.6 - 0.25 * (1 - cc))) + 18.0 * E[..., None] * cc, 0, 255)
+        add = lit - reg
+        a = np.clip(np.abs(add).max(-1) / 10.0, 0, 1)
+        rgb = np.where(a[..., None] > 1e-3, reg + add / np.maximum(a, 1e-3)[..., None], reg)
+        Image.fromarray(np.dstack([np.clip(rgb, 0, 255), a * 255]).astype(np.uint8), 'RGBA').save(os.path.join(OUTD, fn), optimize=True)
+        return (X(c[0] - GR), Y(c[1] - GR), 2 * GR * SC, 2 * GR * SC)
+    GL = {'rev': glow_layer(REV_LED, LED_COLS['cyan'], 'glow_rev.png')}
+    for nm in ('green', 'orange', 'red'): GL['mode_' + nm] = glow_layer(MODE_LED, LED_COLS[nm], f'glow_mode_{nm}.png')
+    GL['status'] = glow_layer(STATUS_LED, LED_COLS['blue'], 'glow_status.png')
+
+    # --- Layout.h
+    def f(v): return f"{v:.3f}f"
+    def PT(p): return "{ %s, %s }" % (f(X(p[0])), f(Y(p[1])))
+    with open(os.path.join(ROOT, 'Layout.h'), 'w') as fo:
+        fo.write("// genere par tools/make_art.py (FINAL=1) - ne pas modifier a la main\n// repere du plugin : 617,5 x 900 unites = fond 1235 x 1800 px / 2\n#pragma once\n#include <juce_graphics/juce_graphics.h>\nnamespace layout\n{\n")
+        fo.write(f"    constexpr float frameW = {f(OUT_W / 2)}, frameH = {f(OUT_H / 2)};\n")
+        fo.write("    // potards : TIME, SIZE, OVERLAP, REGEN, PITCH (orange), MIX\n")
+        fo.write("    const juce::Point<float> knobPos[6] = { " + ", ".join(PT(k[:2]) for k in KNOBS) + " };\n")
+        fo.write(f"    constexpr float knobR = {f(KR)}, knobS = {f(S_P)};   // rayon du potard / cote du sprite\n")
+        fo.write(f"    constexpr int knobFrames = {NF}, knobPx = {NPX};      // images nettes, puis {NF} en flou partiel, puis 1 en flou complet\n")
+        fo.write(f"    const juce::Point<float> revPos {PT(REV_LED)}, modePos {PT(MODE_LED)}, ledPos {PT(STATUS_LED)};\n")
+        fo.write(f"    constexpr float ledR = {f(LED_R * SC)}, ledS = {f(LS * SC)};\n")
+        for k_, r_ in GL.items():
+            fo.write(f"    const juce::Rectangle<float> glow_{k_} {{ {f(r_[0])}, {f(r_[1])}, {f(r_[2])}, {f(r_[3])} }};\n")
+        fo.write(f"    const juce::Point<float> fsPos {PT(FS)}; constexpr float fsR = {f(FS_FLATS * 0.5 * SC)}, fsBtnR = {f(FS_FLATS * 0.5 * 272.0 / 359.0 * SC)};\n")
+        fo.write(f"    const juce::Rectangle<float> pill {{ {f(X(PILL[0]))}, {f(Y(PILL[1]))}, {f(PILL[2] * SC)}, {f(PILL[3] * SC)} }};\n")
+        fo.write(f"    const juce::Point<float> logoPos {PT(LOGO_C)}; constexpr float logoW = {f(LOGO_W * SC)};\n")
+        fo.write(f"    constexpr float lineW = {f(LW * SC)};\n")
+        fo.write("    // textes : chaine, police (0 medium, 1 bold), taille (em), espacement, centre, rotation (degres)\n")
+        fo.write("    struct Txt { const char* s; int font; float em, track, x, y, rot; };\n    const Txt texts[] = {\n")
+        fo.write(",\n".join(f'        {{ "{t[0]}", {1 if "Bold" in t[1] else 0}, {f(t[2] * SC)}, {f(t[3] * SC)}, {f(X(t[4]))}, {f(Y(t[5]))}, {f(t[6])} }}' for t in VEC['texts']) + "\n    };\n")
+        pl = []
+        for ln in VEC['lines']: pl.append(ln)
+        fo.write("    // filets (polylignes) : nombre de points puis x, y ...\n    const float lines[] = {\n")
+        fo.write(",\n".join("        " + str(len(ln)) + ", " + ", ".join(f"{f(X(p[0]))}, {f(Y(p[1]))}" for p in ln) for ln in pl) + "\n    };\n")
+        fo.write("    struct Arc { float cx, cy, r, a0, a1; };   // degres, 0 = haut, sens horaire\n    const Arc arcs[] = { ")
+        fo.write(", ".join(f"{{ {f(X(a[0]))}, {f(Y(a[1]))}, {f(a[2] * SC)}, {f(a[3])}, {f(a[4])} }}" for a in VEC['arcs']) + " };\n")
+        fo.write("    // titre Textural : contours (nombre de points puis x, y ...), remplissage pair-impair\n    const float title[] = {\n")
+        fo.write(",\n".join("        " + str(len(pth)) + ", " + ", ".join(f"{X(p[0]):.2f}f, {Y(p[1]):.2f}f" for p in pth) for pth in VEC['title']) + "\n    };\n")
+        fo.write("    // symboles des modes\n")
+        hd = [m for m in VEC['modes'] if m[0] == 'half']; st = [m for m in VEC['modes'] if m[0] == 'star'][0]; rg = [m for m in VEC['modes'] if m[0] == 'rings']
+        fo.write("    struct Half { float x, y, r; };\n    const Half halves[] = { " + ", ".join(f"{{ {f(X(m[1]))}, {f(Y(m[2]))}, {f(m[3] * SC)} }}" for m in hd) + " };\n")
+        fo.write(f"    const juce::Point<float> starPos {{ {f(X(st[1]))}, {f(Y(st[2]))} }}; constexpr float starL = {f(st[3] * SC)}, starW = {f(st[4] * SC)};\n")
+        fo.write("    const juce::Point<float> ringPos[2] = { " + ", ".join(f"{{ {f(X(m[1]))}, {f(Y(m[2]))} }}" for m in rg) + " };\n")
+        fo.write("    const float ringR[3] = { " + ", ".join(f(r * SC) for r in rg[0][3]) + f" }}; constexpr float ringW = {f(rg[0][4] * SC)};\n")
+        fo.write("    const juce::uint32 colGreen = 0xff4a9622, colOrange = 0xfff78018, colRed = 0xffb21216;\n")
+        fo.write("}\n")
+    print('Layout.h ok')
