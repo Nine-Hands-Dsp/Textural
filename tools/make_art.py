@@ -214,11 +214,12 @@ def line(pts):
     dr.line([(p[0] * K, p[1] * K) for p in pts], fill=255, width=int(round(LW * K)), joint='curve')
 
 # noms des potards (positions de l'ancien visuel)
-text(*P1(623, 150), 'SIZE', f_lab, 1.0)
+GAP5 = 5.0 * PH / OUT_H                             # noms eloignes de leur potard de 5 px (sauf PITCH)
+x, y = P1(623, 150); text(x, y - GAP5, 'SIZE', f_lab, 1.0)
 for (px, py, s) in [(215, 432, 'TIME'), (1025, 432, 'OVERLAP')]:
-    x, y = P1(px, py); text(x, y + LAB_DY, s, f_lab, 1.0)
+    x, y = P1(px, py); text(x, y + LAB_DY + GAP5, s, f_lab, 1.0)
 for (px, py, s) in [(215, 746, 'REGEN'), (620, 758, 'PITCH'), (1023, 746, 'MIX')]:
-    x, y = P2(px, py); text(x, y + LAB_DY, s, f_lab, 1.0)
+    x, y = P2(px, py); text(x, y + LAB_DY + (0 if s == 'PITCH' else GAP5), s, f_lab, 1.0)
 # REVERSE et son crochet
 text(*P(155, 77), 'REVERSE', f_small, 0.8)
 line([P(155, 100), P(155, 130), P(393, 130)])
