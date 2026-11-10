@@ -240,8 +240,6 @@ for (px, py, plus) in [(473, 476, False), (771, 476, True)]:
     line([(x - h_, y), (x + h_, y)])
     if plus: line([(x, y - h_), (x, y + h_)])
 # IN / OUT le long des tranches
-text(PX0 + 22, JACK_Y, 'OUT', f_io, 2.0, 90)
-text(PX0 + PW - 22, JACK_Y, 'IN', f_io, 2.0, 90)
 # titre : contour vectorise de l'ancien visuel
 fp = np.asarray(Image.open(os.path.join(ROOT, 'faceplate.png')).convert('L')).astype(np.float32)
 tx0, ty0, tx1, ty1 = TITLE_BOX
@@ -267,6 +265,11 @@ _ys = [y for p_ in title_paths for _, y in p_]
 _dy = 0.5 * (_pb + _lt) - 0.5 * (min(_ys) + max(_ys)) + TL_DY   # position validee, puis descendu de 20 px
 title_paths = [[(x, y + _dy) for x, y in p_] for p_ in title_paths]
 print('titre : ecart haut', round(min(_ys) + _dy - _pb, 2), 'ecart bas', round(_lt - max(_ys) - _dy, 2))
+# jacks et IN / OUT au niveau du groupe titre + LED (milieu entre le haut du titre et le bas de la LED)
+_tys = [y for p_ in title_paths for _, y in p_]
+JACK_Y = 0.5 * (min(_tys) + STATUS_LED[1] + LED_R * 1.16)
+text(PX0 + 22, JACK_Y, 'OUT', f_io, 2.0, 90)
+text(PX0 + PW - 22, JACK_Y, 'IN', f_io, 2.0, 90)
 tl = Image.new('L', (KW, KH), 0); tdr = ImageDraw.Draw(tl)
 for i, pts in enumerate(title_paths):
     is_hole = hier[0][i][3] >= 0
