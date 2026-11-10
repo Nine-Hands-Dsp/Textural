@@ -270,6 +270,9 @@ _tys = [y for p_ in title_paths for _, y in p_]
 JACK_Y = float(0.5 * (min(_tys) + STATUS_LED[1] + LED_R * 1.16))
 text(PX0 + 22, JACK_Y, 'OUT', f_io, 2.0, 90)
 text(PX0 + PW - 22, JACK_Y, 'IN', f_io, 2.0, 90)
+# LED d'etat centree entre le bas du titre et le haut de la barre de presets (jacks inchanges)
+STATUS_LED = (STATUS_LED[0], float(0.5 * (max(_tys) + PILL[1])))
+print('LED : ecart titre', round(STATUS_LED[1] - max(_tys), 2), 'ecart barre', round(PILL[1] - STATUS_LED[1], 2))
 tl = Image.new('L', (KW, KH), 0); tdr = ImageDraw.Draw(tl)
 for i, pts in enumerate(title_paths):
     is_hole = hier[0][i][3] >= 0
