@@ -380,9 +380,16 @@ def _knob_polar(name):
         im = bodyimg; pm = im.copy(); pm[..., :3] *= pm[..., 3:4] / 255.0
         RR = int(KNOB_RPX * 1.06)
         pol = cv2.warpPolar(pm, (RR, NA), KNOB_C, RR, cv2.WARP_POLAR_LINEAR | cv2.INTER_CUBIC)
-        lum = pol[..., :3].mean(2) + 1.0
-        lb = uniform_filter1d(lum, size=NA // 10, axis=0, mode='wrap')
+        # luminance moyenne ponderee par l'alpha : le bord detoure (alpha faible, couleur premultipliee sombre)
+        # ne doit pas compter, sinon le re-eclairage noircit la couronne
+        al = pol[..., 3] / 255.0
+        lum = pol[..., :3].mean(2)                                   # premultiplie = lum * alpha
+        num = uniform_filter1d(lum, size=NA // 10, axis=0, mode='wrap')
+        den = uniform_filter1d(al, size=NA // 10, axis=0, mode='wrap')
+        lb = num / np.maximum(den, 1e-3) + 1.0
         lb = cv2.GaussianBlur(lb, (0, 0), sigmaX=6, sigmaY=0.1)
+        lb[den < 0.2] = np.nan
+        lb = np.where(np.isnan(lb), np.nanmean(lb, axis=0, keepdims=True), lb)
         _KPOL[name] = (pol, lb, RR, im.shape[:2], ind)
     return _KPOL[name]
 def knob_render(name, ang, blur_deg=0.0):
@@ -395,7 +402,7 @@ def knob_render(name, ang, blur_deg=0.0):
         k = int(round((ang + o) * NA / 360.0))
         rp = np.roll(pol, k, axis=0)
         ratio = lb / np.roll(lb, k, axis=0)
-        rp[..., :3] *= np.clip(ratio, 0.55, 1.8)[..., None]
+        rp[..., :3] *= np.clip(np.nan_to_num(ratio, nan=1.0), 0.72, 1.4)[..., None]
         acc += rp
     acc /= len(offs)
     out = cv2.warpPolar(acc, (ww, hh), KNOB_C, RR, cv2.WARP_POLAR_LINEAR | cv2.WARP_INVERSE_MAP | cv2.INTER_CUBIC)
