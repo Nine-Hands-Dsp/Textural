@@ -273,7 +273,7 @@ def arc(a0, a1):           # angles en degres, 0 = haut, sens horaire
     VEC['arcs'].append([ac[0], ac[1], ar, a0, a1])
     pts = [(ac[0] + ar * math.sin(math.radians(a)), ac[1] - ar * math.cos(math.radians(a))) for a in np.linspace(a0, a1, 80)]
     dr.line([(p[0] * K, p[1] * K) for p in pts], fill=255, width=int(round(LW * K)), joint='curve')
-arc(-80, -12); arc(12, 80); arc(-140, -100); arc(100, 140)
+arc(-80, -12); arc(12, 80); arc(-131, -100); arc(100, 131)      # arc raccourci pres des 2 (demande nov. 2026)
 for (px, py, s) in [(620, 447, '0'), (466, 598, '1'), (771, 598, '1'), (521, 712, '2'), (715, 712, '2')]:
     text(*P2(px, py), s, f_dig)
 # - et + : petits filets
@@ -555,8 +555,11 @@ PRE_PILL = img.copy()
 pill_sd = rrect_sd(UX, UY, px0, py0, pw_, ph_, ph_ / 2)
 pm_ = np.clip(0.5 - pill_sd * AS, 0, 1)
 edge = np.clip(0.5 - np.abs(pill_sd + 0.6) * AS, 0, 1)
-img = img * (1 - pm_[..., None]) + np.array([10.0, 10.0, 11.0]) * pm_[..., None]
-img = img * (1 - edge[..., None] * 0.6) + np.array([150.0, 150.0, 152.0]) * edge[..., None] * 0.6
+PILL_BEVEL = 3.0 / SC                               # biseau plat de 6 px (image 1800 px) autour de la fenetre des presets
+inner = np.clip(0.5 - (pill_sd + PILL_BEVEL) * AS, 0, 1)
+img = img * (1 - pm_[..., None]) + np.array([52.0, 52.0, 55.0]) * pm_[..., None]          # biseau plat gris
+img = img * (1 - inner[..., None]) + np.array([10.0, 10.0, 11.0]) * inner[..., None]     # face noire
+img = img * (1 - edge[..., None] * 0.35) + np.array([120.0, 120.0, 124.0]) * edge[..., None] * 0.35
 ov = Image.new('RGBA', (W, H), (0, 0, 0, 0)); od = ImageDraw.Draw(ov)
 f_p = ImageFont.truetype(F_MED, int(23.0 / SC * AS))
 od.text((CX * AS, (py0 + ph_ / 2) * AS), '1 · SEA SYNTH', font=f_p, fill=(236, 236, 236, 255), anchor='mm')
@@ -680,6 +683,7 @@ if FINAL:
         for k_, r_ in GL.items():
             fo.write(f"    const juce::Rectangle<float> glow_{k_} {{ {f(r_[0])}, {f(r_[1])}, {f(r_[2])}, {f(r_[3])} }};\n")
         fo.write(f"    const juce::Point<float> fsPos {PT(FS)}; constexpr float fsR = {f(FS_FLATS * 0.5 * SC)}, fsBtnR = {f(FS_FLATS * 0.5 * 272.0 / 359.0 * SC)};\n")
+        fo.write(f"    constexpr float pillBevel = {f(3.0)};   // biseau plat (6 px dans l'image 1800)\n")
         fo.write(f"    const juce::Rectangle<float> pill {{ {f(X(PILL[0]))}, {f(Y(PILL[1]))}, {f(PILL[2] * SC)}, {f(PILL[3] * SC)} }};\n")
         fo.write(f"    const juce::Point<float> logoPos {PT(LOGO_C)}; constexpr float logoW = {f(LOGO_W * SC)};\n")
         fo.write(f"    constexpr float lineW = {f(LW * SC)};\n")
