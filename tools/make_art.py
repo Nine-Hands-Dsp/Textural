@@ -49,10 +49,10 @@ def place(src, c, k, n, ang=0.0):
     rgb = np.where(a[..., None] > 1e-4, small[..., :3] / np.maximum(a, 1e-4)[..., None], 0)
     return rgb, a
 
-def with_shadow(rgb, a, s, cast_amt=0.62):
+def with_shadow(rgb, a, s, cast_amt=0.62, contact_amt=0.55, cap=0.86):
     cast = cv2.GaussianBlur(shift(a, 0.06 * s, 0.09 * s), (0, 0), 0.06 * s) * cast_amt
-    contact = cv2.GaussianBlur(shift(a, 0.010 * s, 0.016 * s), (0, 0), 0.016 * s) * 0.55
-    sh = np.clip(cast + contact, 0, 0.86) * (1 - a)
+    contact = cv2.GaussianBlur(shift(a, 0.010 * s, 0.016 * s), (0, 0), 0.016 * s) * contact_amt
+    sh = np.clip(cast + contact, 0, cap) * (1 - a)
     alpha = np.clip(a + sh, 0, 1)
     col = np.where(alpha[..., None] > 1e-4, rgb * (a / np.maximum(alpha, 1e-4))[..., None], 0)
     return np.dstack([np.clip(col, 0, 255), alpha * 255]).astype(np.float32)
@@ -417,7 +417,7 @@ def knob_sprite(name, R_units, value, blur_deg=0.0):
     ang = -150 + 300 * value
     img_ = knob_render(name, ang, blur_deg)
     rgb, a = place(img_, KNOB_C, k, n)
-    spr = with_shadow(rgb, a, 2 * R_units * AS, 0.66)
+    spr = with_shadow(rgb, a, 2 * R_units * AS, 0.42, 0.22, 0.52)   # ombre douce : pas de liseré noir sous la couronne
     # index : tourne avec le potard, garde sa propre lumiere (creme), net (il n'a pas de crans)
     ind = _knob_polar(name)[4]
     irgb, ia = place(ind, KNOB_C, k, n, ang)
