@@ -40,6 +40,7 @@ public:
     static constexpr int   kNumSizes = 3;          // 60 % (defaut d'origine) / 75 % / 100 %
     static int sizeHeight (int idx);
     void forceRenderScale (float sc) { forcedScale = sc; rebuildCaches (sc); }   // outil de rendu
+    void demoStatus (int knob) { showKnob (knob, knobParamID (Layer::Main, knob)); statusMs -= 600.0; }   // outil de rendu (notice)
 
 private:
     enum class Layer { Main, Reverse, Mode, Foot };
