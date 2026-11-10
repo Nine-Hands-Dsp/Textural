@@ -125,8 +125,12 @@ KNOBS = [(*D1(321.7, 162.6), 'TIME', 0), (*D1(547.7, 162.6), 'SIZE', 0), (*D1(77
 REV_LED = D(460.2, 69.0)
 MODE_LED = D(684.0, 69.0)
 STATUS_LED = D(544.7, 583.7)
+LAB_DY = 15.0 * PH / OUT_H                          # noms sous les potards descendus de 15 px (image 1800 px)
+TL_DY = 20.0 * PH / OUT_H                           # titre Textural et LED d'etat descendus de 20 px
+STATUS_LED0 = STATUS_LED
+STATUS_LED = (STATUS_LED[0], STATUS_LED[1] + TL_DY)
 FS = D(544.7, 895.3)
-FS = (FS[0], FS[1] - 50.0 * PH / OUT_H)              # remonte de 50 px dans l'image 1800 px (demande nov. 2026)
+FS = (FS[0], FS[1] - 65.0 * PH / OUT_H)              # remonte de 50 px puis 15 px dans l image 1800 px (demandes nov. 2026)
 FS_FLATS = 100.0
 JACK_Y = P(0, 840)[1]
 TITLE_BOX = (325, 1165, 890, 1245)                  # titre dans l'ancien visuel (px)
@@ -210,10 +214,11 @@ def line(pts):
     dr.line([(p[0] * K, p[1] * K) for p in pts], fill=255, width=int(round(LW * K)), joint='curve')
 
 # noms des potards (positions de l'ancien visuel)
-for (px, py, s) in [(215, 432, 'TIME'), (623, 150, 'SIZE'), (1025, 432, 'OVERLAP')]:
-    text(*P1(px, py), s, f_lab, 1.0)
+text(*P1(623, 150), 'SIZE', f_lab, 1.0)
+for (px, py, s) in [(215, 432, 'TIME'), (1025, 432, 'OVERLAP')]:
+    x, y = P1(px, py); text(x, y + LAB_DY, s, f_lab, 1.0)
 for (px, py, s) in [(215, 746, 'REGEN'), (620, 758, 'PITCH'), (1023, 746, 'MIX')]:
-    text(*P2(px, py), s, f_lab, 1.0)
+    x, y = P2(px, py); text(x, y + LAB_DY, s, f_lab, 1.0)
 # REVERSE et son crochet
 text(*P(155, 77), 'REVERSE', f_small, 0.8)
 line([P(155, 100), P(155, 130), P(393, 130)])
@@ -256,9 +261,9 @@ for c in cnts:
     title_paths.append(pts)
 # titre a egale distance du bas du mot PITCH et du haut de la LED d'etat
 _pb = dr.textbbox((P2(620, 758)[0] * K, P2(620, 758)[1] * K), 'PITCH', font=f_lab, anchor='lm')[3] / K
-_lt = STATUS_LED[1] - LED_R * 1.16
+_lt = STATUS_LED0[1] - LED_R * 1.16
 _ys = [y for p_ in title_paths for _, y in p_]
-_dy = 0.5 * (_pb + _lt) - 0.5 * (min(_ys) + max(_ys))
+_dy = 0.5 * (_pb + _lt) - 0.5 * (min(_ys) + max(_ys)) + TL_DY   # position validee, puis descendu de 20 px
 title_paths = [[(x, y + _dy) for x, y in p_] for p_ in title_paths]
 print('titre : ecart haut', round(min(_ys) + _dy - _pb, 2), 'ecart bas', round(_lt - max(_ys) - _dy, 2))
 tl = Image.new('L', (KW, KH), 0); tdr = ImageDraw.Draw(tl)
