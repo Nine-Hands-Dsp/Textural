@@ -1,4 +1,4 @@
-# Textural (NINE HANDS | DSP) — VST3 granulaire pour Windows 11
+# Textural (NINE HANDS | DSP) — VST3 granulaire pour Windows et macOS
 
 Moteur de synthèse granulaire inspiré de la pédale MXR Textures M310 : trois modes (Delay, Auto Freeze, Layers), grains inversés, pitch ±2 octaves, régénération delay/granulaire, randomisations, reverb, filtre LP/HP 4 pôles, vibrato, tap tempo, trails, sorties Mono / Wet-Dry / Stéréo, 8 presets d'usine et contrôle MIDI complet.
 
@@ -13,13 +13,14 @@ Moteur de synthèse granulaire inspiré de la pédale MXR Textures M310 : trois 
 
 ## Compiler avec GitHub
 
-1. Pousse **tous les fichiers à la racine** du dépôt (dont `faceplate.png` et le dossier `.github/workflows`).
+1. Pousse **tous les fichiers à la racine** du dépôt (images du plugin générées par `tools/make_art.py` avec `FINAL=1`, et le dossier `.github/workflows`).
+   Les boutons ci-dessus téléchargent toujours la dernière version.
 2. GitHub Actions compile automatiquement (onglet **Actions** → dernier run → *Artifacts*) :
    - `Textural-Setup-Windows` : installeur `Textural-Setup.exe` (copie le plugin dans `C:\Program Files\Common Files\VST3`) ;
    - `Textural-VST3-Windows` : le dossier `Textural.vst3` à copier soi-même dans `C:\Program Files\Common Files\VST3`.
 3. Relance un scan des plugins dans ton DAW : le plugin apparaît sous **Textural**, fabricant **NINE HANDS | DSP**.
 
-## Les trois modes (bouton MODE, à droite de REVERSE)
+## Les trois modes (LED MODE, entre SIZE et OVERLAP)
 
 La LED du bouton prend la couleur du symbole du mode et clignote quand le son est gelé. Le nom du mode s'affiche dans la ligne d'état.
 
@@ -31,14 +32,13 @@ La LED du bouton prend la couleur du symbole du mode et clignote quand le son es
 
 | Action | Effet |
 |---|---|
-| Glisser un bouton (haut/bas) | Réglage ; **Maj** = réglage fin ; double-clic = valeur par défaut ; molette OK |
-| Clic REVERSE | Reverse on/off (LED bleue) : la guitare enregistrée est rejouée à l'envers, phrase par phrase |
-| Clic MODE | Delay (vert) → Auto Freeze (orange) → Layers (rouge) ; la LED prend la couleur du symbole et clignote quand le son est gelé |
-| Clic footswitch | Effet on/off (LED bleue) |
+| Glisser un potard (haut/bas) | Réglage ; **Maj** = réglage fin ; double-clic = valeur par défaut ; molette OK. La couronne tourne avec l'index, avec un flou de mouvement quand on tourne vite |
+| Clic sur la LED REVERSE | Reverse on/off (LED cyan) : la guitare enregistrée est rejouée à l'envers, phrase par phrase |
+| Clic sur la LED MODE | Delay (vert) → Auto Freeze (orange) → Layers (rouge) ; la LED prend la couleur du symbole et clignote quand le son est gelé |
+| Clic footswitch | Effet on/off dès l'appui (LED bleue) |
 | Maintien footswitch | Freeze momentané (Delay/Layers) ; en Auto Freeze, le maintien *dé-gèle*. Si *Footswitch Hold Mode* = Preset Scroll : maintien = entrer/sortir du défilement, clic = preset suivant |
-| Clic bouton PRESETS | Live → 1 … 8 → Live (LED verte = 1-4, rouge = 5-8, clignote si modifié) |
-| Maintien PRESETS 2 s | Copie des réglages ; clics = choix de l'emplacement ; maintien 2 s = sauvegarde |
-| Clic droit | **Plugin size** : 60 %, 75 %, 100 % (même format que Freeze Shimmer, jamais plus petit que 60 % ; la taille par défaut porte la mention « (default) ») ; sous-menu **Default size (new windows)** = taille d'ouverture des nouvelles fenêtres, commune à toutes les instances (une taille sauvegardée avec le projet pour une instance reste prioritaire) ; sauvegarde/réinitialisation des presets |
+| Barre de presets | ◀ / ▶ = preset précédent / suivant ; clic sur le nom = liste des presets. Point vert = 1-4, rouge = 5-8, « * » = modifié. Pendant un réglage, la ligne d'état prend sa place puis s'efface |
+| Clic droit (menu ouvert là où on clique) | **Glow** : intensité des halos des LEDs (25 / 50 / 75 / 100 %) ; **Plugin size** : 60 %, 75 %, 100 % (jamais plus petit que 60 % ; la taille par défaut porte la mention « (default) ») ; sous-menu **Default size (new windows)** = taille d'ouverture des nouvelles fenêtres, commune à toutes les instances (une taille sauvegardée avec le projet pour une instance reste prioritaire) ; sauvegarde/réinitialisation des presets |
 
 ### Paramètres secondaires (comme maintenir les boutons de la pédale)
 
@@ -47,11 +47,11 @@ La LED du bouton prend la couleur du symbole du mode et clignote quand le son es
 - **Ctrl + Alt + glisser** (ou clic sur la LED bleue) : Preset Scroll Mute, Trails, Output Mode, Footswitch Hold Mode, Output Gain.
 - **Tap tempo** : Ctrl + clic sur MODE (ou REVERSE verrouillé puis clic sur MODE), ou un CC appris (MIDI Learn : Tap Tempo).
 
-La ligne d'état sous « Textural » n'affiche que le réglage du potard en cours de rotation, dans la couleur du potard.
+La ligne d'état s'affiche dans la barre de presets pendant les réglages (valeur du potard, mode, tap tempo, MIDI Learn), puis la barre de presets revient.
 
 ## MIDI
 
-**MIDI Learn** : clic droit sur une commande (potard dans la couche active : normale, Ctrl, Alt ou Ctrl + Alt ; REVERSE, MODE, footswitch, bouton preset) -> « MIDI Learn », puis bouger la pédale d'expression / appuyer sur le bouton MIDI ; « Clear MIDI » retire l'assignation. Le sous-menu MIDI liste toutes les commandes (dont Freeze et Tap Tempo) et « Clear all MIDI assignments » efface toutes les assignations. Les assignations sont sauvegardées avec le projet.
+**MIDI Learn** : clic droit sur une commande (potard dans la couche active : normale, Ctrl, Alt ou Ctrl + Alt ; REVERSE, MODE, footswitch, flèche ▶ de la barre de presets) -> « MIDI Learn », puis bouger la pédale d'expression / appuyer sur le bouton MIDI ; « Clear MIDI » retire l'assignation. Le sous-menu MIDI liste toutes les commandes (dont Freeze et Tap Tempo) et « Clear all MIDI assignments » efface toutes les assignations. Les assignations sont sauvegardées avec le projet.
 
 Program Change 1-8 = emplacements (2 = Live, 0 = Live aussi), 9 = Slow Attack Soundtrack. Dans la liste des presets du DAW : 1 Sea Synth … 8 Stardust Cloud, puis Slow Attack Soundtrack. Tous les paramètres sont aussi automatisables dans le DAW.
 
@@ -59,7 +59,7 @@ Aucun CC assigné par défaut : clic droit > MIDI > Learn.
 
 ## Presets d'usine
 
-À l'ouverture, la pédale charge le preset 1 (Sea Synth). Le bouton PRESETS fait défiler 1 → 2 → … → 8 → 1.
+À l'ouverture, la pédale charge le preset 1 (Sea Synth). Les flèches de la barre de presets font défiler les presets.
 
 Verts :
 1. Sea Synth : synthé polyphonique ondulant.
@@ -73,7 +73,7 @@ Rouges :
 7. Mellow Cello : nappe une octave plus bas avec vibrato, plus présente après la note.
 8. Stardust Cloud : synthé granulaire en Layers avec une pluie de particules.
 
-**Slow Attack Soundtrack** (Layers, attaque 587 ms, déclin 17,76 s, pitch −7 demi-tons, size 203 ms, overlap 18, mix 38 %) n'occupe aucun emplacement de la pédale. On le charge depuis la liste des presets du DAW (programme 9, Program Change 9) ou par le menu clic droit.
+**Slow Attack Soundtrack** (Layers, attaque 587 ms, déclin 17,76 s, pitch −7 demi-tons, size 203 ms, overlap 18, mix 38 %) n'occupe aucun emplacement de la pédale. On le charge depuis la liste des presets du DAW (programme 9, Program Change 9) ou depuis la barre de presets.
 
 ## Moteur audio
 
@@ -109,3 +109,5 @@ Les presets utilisateur sont enregistrés dans le projet du DAW et dans `%APPDAT
 - v1.3.0 : clic droit > Plugin size > Default size (new windows) : taille par défaut des nouvelles fenêtres au choix, comme dans Octopus
 
 - v1.3.1 : plus aucun CC MIDI assigné par défaut (tout passe par le MIDI Learn)
+
+- v2.0.0 : refonte NINE HANDS | DSP : visuel 1235 x 1800 (motif de particules, logo NINE HANDS | DSP, footswitch et jacks photo), sérigraphie vectorielle, potards photo dont la couronne tourne avec l'index (flou de mouvement), LEDs photo, réglage Glow, barre de presets / ligne d'état, menus au design d'Octopus, fenêtre 60 / 75 / 100 % (493 / 719 / 958 px, jusqu'à 150 %)

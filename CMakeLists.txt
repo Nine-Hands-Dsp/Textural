@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Textural VERSION 1.3.1 LANGUAGES C CXX)
+project(Textural VERSION 2.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -18,7 +18,7 @@ FetchContent_MakeAvailable(JUCE)
 juce_add_plugin(Textural
     COMPANY_NAME                "NINE HANDS | DSP"
     PRODUCT_NAME                "Textural"
-    VERSION                     1.3.1
+    VERSION                     2.0.0
     PLUGIN_MANUFACTURER_CODE    Swga
     PLUGIN_CODE                 Txtl
     FORMATS                     VST3
@@ -32,10 +32,15 @@ juce_add_plugin(Textural
 
 juce_generate_juce_header(Textural)
 
+# visuel NINE HANDS | DSP (genere par tools/make_art.py, FINAL=1)
 juce_add_binary_data(TexturalData SOURCES
-    faceplate.png footswitch.png background.png
-    knob_base_black.png knob_cap_black.png knob_ptr_black.png
-    knob_base_orange.png knob_cap_orange.png knob_ptr_orange.png)
+    background.png
+    knob_black.png knob_orange.png knob_index_black.png knob_index_orange.png
+    led_cyan_on.png led_cyan_off.png led_green_on.png led_green_off.png led_orange_on.png led_orange_off.png
+    led_red_on.png led_red_off.png led_blue_on.png led_blue_off.png
+    glow_rev.png glow_mode_green.png glow_mode_orange.png glow_mode_red.png glow_status.png
+    assets/fonts/Poppins-Bold.ttf assets/fonts/Poppins-Medium.ttf
+    assets/NineHands_Logo_Black.svg)
 
 target_sources(Textural PRIVATE
     PluginProcessor.cpp

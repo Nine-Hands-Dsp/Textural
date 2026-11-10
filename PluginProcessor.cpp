@@ -662,6 +662,7 @@ void TexturalAudioProcessor::getStateInformation (MemoryBlock& dest)
     auto state = apvts.copyState();
     state.setProperty ("preset", currentPreset.load(), nullptr);
     state.setProperty ("uiHeight", uiHeight.load(), nullptr);
+    state.setProperty ("glow", glowPct.load(), nullptr);
     for (int i = 0; i < kNumLearn; ++i)
         state.setProperty ("cc_" + learnId (i), ccAssign[i].load(), nullptr);
     state.setProperty ("live", snapshotToString (isLive (currentPreset.load()) ? takeSnapshot() : liveSnapshot), nullptr);
@@ -692,7 +693,9 @@ void TexturalAudioProcessor::setStateInformation (const void* data, int size)
     if (currentPreset.load() == 0) currentPreset = kLivePreset;
     {
         const int uh = (int) state.getProperty ("uiHeight", 0);   // 0 = aucune taille sauvegardée pour cette instance
-        uiHeight = uh > 0 ? jlimit (493, 1479, uh) : 0;
+        uiHeight = uh > 0 ? jlimit (493, 1437, uh) : 0;
+        const int gl = (int) state.getProperty ("glow", 100);
+        glowPct = (gl == 25 || gl == 50 || gl == 75) ? gl : 100;
     }
     // assignations MIDI Learn (ancien projet sans ces propriétés : CC fixes d'avant = ancienne table d'usine)
     bool untouched = true;

@@ -90,6 +90,7 @@ public:
     void resetMidiMap();
 
     // UI
+    std::atomic<int> glowPct { 100 };     // Glow : intensite des halos des LEDs (25 / 50 / 75 / 100 %)
     std::atomic<int> uiHeight { 0 };      // 0 = pas de taille sauvegardée pour cette instance -> taille par défaut des nouvelles fenêtres
     bool isFrozen() const       { return engine.frozen.load(); }
     int  activeLayers() const   { return engine.layersActive.load(); }
