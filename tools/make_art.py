@@ -113,8 +113,15 @@ KS_ = PH / 1790.0                                   # unites de travail par pixe
 def D(x, y): return P((x - 202.84) * 1.805, y * 1.805)   # ancien repere de l'editeur -> travail
 
 KNOB_R = 115.5 * KS_
-KNOBS = [(*D(321.7, 162.6), 'TIME', 0), (*D(547.7, 162.6), 'SIZE', 0), (*D(771.6, 161.5), 'OVERLAP', 0),
-         (*D(320.0, 333.2), 'REGEN', 0), (*D(543.9, 330.2), 'PITCH', 1), (*D(771.6, 334.9), 'MIX', 0)]
+# bloc des potards : tout descendu de 20 px (image 1800 px) et rangees plus espacees (+32 px) pour aerer les noms
+DY1 = 20.0 * PH / OUT_H                             # rangee du haut (TIME / SIZE / OVERLAP) et leurs inscriptions
+DY2 = (20.0 + 32.0) * PH / OUT_H                    # rangee du bas (REGEN / PITCH / MIX), arc et chiffres du PITCH
+def P1(px, py): x, y = P(px, py); return (x, y + DY1)
+def P2(px, py): x, y = P(px, py); return (x, y + DY2)
+def D1(x, y): a, b = D(x, y); return (a, b + DY1)
+def D2(x, y): a, b = D(x, y); return (a, b + DY2)
+KNOBS = [(*D1(321.7, 162.6), 'TIME', 0), (*D1(547.7, 162.6), 'SIZE', 0), (*D1(771.6, 161.5), 'OVERLAP', 0),
+         (*D2(320.0, 333.2), 'REGEN', 0), (*D2(543.9, 330.2), 'PITCH', 1), (*D2(771.6, 334.9), 'MIX', 0)]
 REV_LED = D(460.2, 69.0)
 MODE_LED = D(684.0, 69.0)
 STATUS_LED = D(544.7, 583.7)
@@ -203,25 +210,27 @@ def line(pts):
     dr.line([(p[0] * K, p[1] * K) for p in pts], fill=255, width=int(round(LW * K)), joint='curve')
 
 # noms des potards (positions de l'ancien visuel)
-for (px, py, s) in [(215, 432, 'TIME'), (623, 150, 'SIZE'), (1025, 432, 'OVERLAP'), (215, 746, 'REGEN'), (620, 758, 'PITCH'), (1023, 746, 'MIX')]:
-    text(*P(px, py), s, f_lab, 1.0)
+for (px, py, s) in [(215, 432, 'TIME'), (623, 150, 'SIZE'), (1025, 432, 'OVERLAP')]:
+    text(*P1(px, py), s, f_lab, 1.0)
+for (px, py, s) in [(215, 746, 'REGEN'), (620, 758, 'PITCH'), (1023, 746, 'MIX')]:
+    text(*P2(px, py), s, f_lab, 1.0)
 # REVERSE et son crochet
 text(*P(155, 77), 'REVERSE', f_small, 0.8)
 line([P(155, 100), P(155, 130), P(393, 130)])
 # cadre qui relie les potards
-line([P(228, 600), P(80, 600), P(80, 293), P(1153, 293), P(1153, 600), P(1013, 600)])
+line([P2(228, 600), P2(80, 600), P1(80, 293), P1(1153, 293), P2(1153, 600), P2(1013, 600)])
 # arc du PITCH (centre / rayon de l'ancien visuel), coupures autour des chiffres
-ac, ar = P(619, 601), 153 * KS_
+ac, ar = P2(619, 601), 153 * KS_
 def arc(a0, a1):           # angles en degres, 0 = haut, sens horaire
     VEC['arcs'].append([ac[0], ac[1], ar, a0, a1])
     pts = [(ac[0] + ar * math.sin(math.radians(a)), ac[1] - ar * math.cos(math.radians(a))) for a in np.linspace(a0, a1, 80)]
     dr.line([(p[0] * K, p[1] * K) for p in pts], fill=255, width=int(round(LW * K)), joint='curve')
 arc(-80, -12); arc(12, 80); arc(-140, -100); arc(100, 140)
 for (px, py, s) in [(620, 447, '0'), (466, 598, '1'), (771, 598, '1'), (521, 712, '2'), (715, 712, '2')]:
-    text(*P(px, py), s, f_dig)
+    text(*P2(px, py), s, f_dig)
 # - et + : petits filets
 for (px, py, plus) in [(473, 476, False), (771, 476, True)]:
-    x, y = P(px, py); h_ = 8.5
+    x, y = P2(px, py); h_ = 8.5
     line([(x - h_, y), (x + h_, y)])
     if plus: line([(x, y - h_), (x, y + h_)])
 # IN / OUT le long des tranches
@@ -246,7 +255,7 @@ for c in cnts:
     pts = [P(tx0 - 10 + x / UPS, ty0 - 10 + y / UPS) for x, y in c]
     title_paths.append(pts)
 # titre a egale distance du bas du mot PITCH et du haut de la LED d'etat
-_pb = dr.textbbox((P(620, 758)[0] * K, P(620, 758)[1] * K), 'PITCH', font=f_lab, anchor='lm')[3] / K
+_pb = dr.textbbox((P2(620, 758)[0] * K, P2(620, 758)[1] * K), 'PITCH', font=f_lab, anchor='lm')[3] / K
 _lt = STATUS_LED[1] - LED_R * 1.16
 _ys = [y for p_ in title_paths for _, y in p_]
 _dy = 0.5 * (_pb + _lt) - 0.5 * (min(_ys) + max(_ys))
