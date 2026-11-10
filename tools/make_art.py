@@ -119,9 +119,12 @@ REV_LED = D(460.2, 69.0)
 MODE_LED = D(684.0, 69.0)
 STATUS_LED = D(544.7, 583.7)
 FS = D(544.7, 895.3)
+FS = (FS[0], FS[1] - 50.0 * PH / OUT_H)              # remonte de 50 px dans l'image 1800 px (demande nov. 2026)
+FS_FLATS = 100.0
 JACK_Y = P(0, 840)[1]
 TITLE_BOX = (325, 1165, 890, 1245)                  # titre dans l'ancien visuel (px)
-LOGO_C = P(620, 868); LOGO_W = 200.0
+LOGO_W = 200.0
+LOGO_C = (CX, 0.5 * (FS[1] + FS_FLATS / 2 + PY0 + PH))   # logo en bas, a egale distance du footswitch et du bas de la coque
 PILL_W, PILL_H = 400.0 / SC, 38.0 / SC              # pastille de reference (Strong Pickle) : 400 x 38 dans le repere 900
 PILL = (CX - PILL_W / 2, P(0, 1322)[1] - PILL_H / 2, PILL_W, PILL_H)
 LED_R = 10.5                                        # LED 5 mm
@@ -242,6 +245,13 @@ for c in cnts:
     c = cv2.approxPolyDP(c, 0.9, True)[:, 0, :].astype(np.float32)
     pts = [P(tx0 - 10 + x / UPS, ty0 - 10 + y / UPS) for x, y in c]
     title_paths.append(pts)
+# titre a egale distance du bas du mot PITCH et du haut de la LED d'etat
+_pb = dr.textbbox((P(620, 758)[0] * K, P(620, 758)[1] * K), 'PITCH', font=f_lab, anchor='lm')[3] / K
+_lt = STATUS_LED[1] - LED_R * 1.16
+_ys = [y for p_ in title_paths for _, y in p_]
+_dy = 0.5 * (_pb + _lt) - 0.5 * (min(_ys) + max(_ys))
+title_paths = [[(x, y + _dy) for x, y in p_] for p_ in title_paths]
+print('titre : ecart haut', round(min(_ys) + _dy - _pb, 2), 'ecart bas', round(_lt - max(_ys) - _dy, 2))
 tl = Image.new('L', (KW, KH), 0); tdr = ImageDraw.Draw(tl)
 for i, pts in enumerate(title_paths):
     is_hole = hier[0][i][3] >= 0
@@ -407,7 +417,6 @@ for (c, col, on) in LEDS:
     over(img, spr, (c[0] - S_ / 2) * AS, (c[1] - S_ / 2) * AS)
 
 # ------------------------------------------------------------------ 6. footswitch (kit)
-FS_FLATS = 100.0
 fsim = load('footswitch_photo.png'); FS_C, FS_FLATS_PX = (625.5, 618.0), 718.0
 S_ = FS_FLATS * 1.9; n = int(round(S_ * AS)); k = FS_FLATS * AS / FS_FLATS_PX
 rgb, a = place(fsim, FS_C, k, n)
