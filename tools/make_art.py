@@ -125,6 +125,10 @@ KNOBS = [(*D1(321.7, 162.6), 'TIME', 0), (*D1(547.7, 162.6), 'SIZE', 0), (*D1(77
          (*D2(320.0, 333.2), 'REGEN', 0), (*D2(543.9, 330.2), 'PITCH', 1), (*D2(771.6, 334.9), 'MIX', 0)]
 REV_LED = D(460.2, 69.0)
 MODE_LED = D(684.0, 69.0)
+REV_LED0 = REV_LED
+# LEDs REVERSE et MODE a mi-chemin entre les potards du haut (TIME / SIZE et SIZE / OVERLAP) (demande nov. 2026)
+REV_LED = (0.5 * (KNOBS[0][0] + KNOBS[1][0]), REV_LED[1])
+MODE_LED = (0.5 * (KNOBS[1][0] + KNOBS[2][0]), MODE_LED[1])
 STATUS_LED = D(544.7, 583.7)
 LAB_DY = 15.0 * PH / OUT_H                          # noms sous les potards descendus de 15 px (image 1800 px)
 TL_DY = 40.0 * PH / OUT_H                           # titre Textural et LED d etat descendus de 2 x 20 px
@@ -223,7 +227,8 @@ for (px, py, s) in [(215, 746, 'REGEN'), (620, 758, 'PITCH'), (1023, 746, 'MIX')
     x, y = P2(px, py); text(x, y + LAB_DY + (0 if s == 'PITCH' else GAP5), s, f_lab, 1.0)
 # REVERSE et son crochet
 text(*P(155, 77), 'REVERSE', f_small, 0.8)
-line([P(155, 100), P(155, 130), P(393, 130)])
+_rev_end = P(393, 130); _rev_end = (_rev_end[0] + REV_LED[0] - REV_LED0[0], _rev_end[1])   # le crochet garde son ecart avec la LED
+line([P(155, 100), P(155, 130), _rev_end])
 # cadre qui relie les potards
 line([P2(228, 600), P2(80, 600), P1(80, 293), P1(1153, 293), P2(1153, 600), P2(1013, 600)])
 # arc du PITCH (centre / rayon de l'ancien visuel), coupures autour des chiffres
