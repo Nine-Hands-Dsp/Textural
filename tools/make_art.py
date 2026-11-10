@@ -225,12 +225,48 @@ for (px, py, s) in [(215, 432, 'TIME'), (1025, 432, 'OVERLAP')]:
     x, y = P1(px, py); text(x, y + LAB_DY + GAP5, s, f_lab, 1.0)
 for (px, py, s) in [(215, 746, 'REGEN'), (620, 758, 'PITCH'), (1023, 746, 'MIX')]:
     x, y = P2(px, py); text(x, y + LAB_DY + (0 if s == 'PITCH' else GAP5), s, f_lab, 1.0)
+# graduations : 11 points autour des potards noirs, sur la course du potard (-135 a +135 degres)
+KNOB_A0, KNOB_A1 = -135.0, 135.0
+VEC['dots'] = []
+DOT_R = 2.1                                          # rayon d'un point (unites de travail)
+for (kx, ky, nm, orange) in KNOBS:
+    if orange: continue
+    rr_ = KNOB_R + 11.0
+    for i in range(11):
+        a_ = math.radians(KNOB_A0 + (KNOB_A1 - KNOB_A0) * i / 10)
+        px_, py_ = kx + rr_ * math.sin(a_), ky - rr_ * math.cos(a_)
+        VEC['dots'].append([px_, py_, DOT_R])
+        dr.ellipse(((px_ - DOT_R) * K, (py_ - DOT_R) * K, (px_ + DOT_R) * K, (py_ + DOT_R) * K), fill=255)
 # REVERSE et son crochet
 text(*P(155, 77), 'REVERSE', f_small, 0.8)
 _rev_end = P(393, 130); _rev_end = (_rev_end[0] + REV_LED[0] - REV_LED0[0], _rev_end[1])   # le crochet garde son ecart avec la LED
 line([P(155, 100), P(155, 130), _rev_end])
 # cadre qui relie les potards
-line([P2(228, 600), P2(80, 600), P1(80, 293), P1(1153, 293), P2(1153, 600), P2(1013, 600)])
+def line_gapped(pts, gap):
+    """polyligne coupee la ou elle passerait sur un point de graduation (ecart 'gap' autour de chaque point)"""
+    dots = np.array([[d[0], d[1]] for d in VEC['dots']]) if VEC['dots'] else np.zeros((0, 2))
+    samples = []
+    for (x0_, y0_), (x1_, y1_) in zip(pts[:-1], pts[1:]):
+        n_ = max(2, int(math.hypot(x1_ - x0_, y1_ - y0_) / 0.25))
+        for t_ in np.linspace(0, 1, n_, endpoint=False):
+            samples.append((x0_ + (x1_ - x0_) * t_, y0_ + (y1_ - y0_) * t_))
+    samples.append(tuple(pts[-1]))
+    cur = []
+    def flush():
+        if len(cur) >= 2:
+            simp = [cur[0]]
+            for q in cur[1:-1]:
+                a_, b_ = simp[-1], q
+                c_ = cur[cur.index(q) + 1]
+                if abs((b_[0] - a_[0]) * (c_[1] - a_[1]) - (b_[1] - a_[1]) * (c_[0] - a_[0])) > 1e-3: simp.append(q)
+            simp.append(cur[-1]); line(simp)
+    for q in samples:
+        if len(dots) and np.min(np.hypot(dots[:, 0] - q[0], dots[:, 1] - q[1])) < gap:
+            flush(); cur = []
+        else:
+            cur.append(q)
+    flush()
+line_gapped([P2(228, 600), P2(80, 600), P1(80, 293), P1(1153, 293), P2(1153, 600), P2(1013, 600)], DOT_R + 3.0)
 # arc du PITCH (centre / rayon de l'ancien visuel), coupures autour des chiffres
 ac, ar = P2(619, 601), 153 * KS_
 def arc(a0, a1):           # angles en degres, 0 = haut, sens horaire
@@ -428,7 +464,7 @@ def knob_render(name, ang, blur_deg=0.0):
 
 def knob_sprite(name, R_units, value, blur_deg=0.0):
     S_ = 2 * R_units * 1.45; n = int(round(S_ * AS)); k = R_units * AS / KNOB_RPX
-    ang = -150 + 300 * value
+    ang = KNOB_A0 + (KNOB_A1 - KNOB_A0) * value
     img_ = knob_render(name, ang, blur_deg)
     rgb, a = place(img_, KNOB_C, k, n)
     spr = with_shadow(rgb, a, 2 * R_units * AS, 0.42, 0.22, 0.52)   # ombre douce : pas de liseré noir sous la couronne
@@ -658,6 +694,7 @@ if FINAL:
         fo.write(", ".join(f"{{ {f(X(a[0]))}, {f(Y(a[1]))}, {f(a[2] * SC)}, {f(a[3])}, {f(a[4])} }}" for a in VEC['arcs']) + " };\n")
         fo.write("    // titre Textural : contours (nombre de points puis x, y ...), remplissage pair-impair\n    const float title[] = {\n")
         fo.write(",\n".join("        " + str(len(pth)) + ", " + ", ".join(f"{X(p[0]):.2f}f, {Y(p[1]):.2f}f" for p in pth) for pth in VEC['title']) + "\n    };\n")
+        fo.write("    struct Dot { float x, y, r; };\n    const Dot dots[] = { " + ", ".join(f"{{ {f(X(d[0]))}, {f(Y(d[1]))}, {f(d[2] * SC)} }}" for d in VEC["dots"]) + " };\n")
         fo.write("    // symboles des modes\n")
         hd = [m for m in VEC['modes'] if m[0] == 'half']; st = [m for m in VEC['modes'] if m[0] == 'star'][0]; rg = [m for m in VEC['modes'] if m[0] == 'rings']
         fo.write("    struct Half { float x, y, r; };\n    const Half halves[] = { " + ", ".join(f"{{ {f(X(m[1]))}, {f(Y(m[2]))}, {f(m[3] * SC)} }}" for m in hd) + " };\n")
