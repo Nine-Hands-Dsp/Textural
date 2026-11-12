@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Textural VERSION 2.0.0 LANGUAGES C CXX)
+project(Textural VERSION 2.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -18,7 +18,7 @@ FetchContent_MakeAvailable(JUCE)
 juce_add_plugin(Textural
     COMPANY_NAME                "NINE HANDS | DSP"
     PRODUCT_NAME                "Textural"
-    VERSION                     2.0.0
+    VERSION                     2.1.0
     PLUGIN_MANUFACTURER_CODE    Swga
     PLUGIN_CODE                 Txtl
     FORMATS                     VST3
@@ -47,6 +47,17 @@ target_sources(Textural PRIVATE
     PluginEditor.cpp
     GranularEngine.cpp)
 
+
+# verrou de taille de la fenetre du DAW (jamais sous 60 %, jamais au-dela de 150 %)
+if(APPLE)
+  target_sources(Textural PRIVATE WindowMinSize.mm)
+  target_link_libraries(Textural PRIVATE "-framework Cocoa")
+else()
+  target_sources(Textural PRIVATE WindowMinSize.cpp)
+endif()
+if(WIN32)
+  target_link_libraries(Textural PRIVATE comctl32 user32)
+endif()
 target_compile_definitions(Textural PUBLIC
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0

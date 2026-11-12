@@ -2,6 +2,7 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 #include "NineHandsMenu.h"
+#include "NineHandsWindow.h"
 
 //==============================================================================
 //  Textural (NINE HANDS | DSP) v2 : pedale simple, fond 1235 x 1800 px (tools/make_art.py, FINAL=1).
@@ -61,6 +62,11 @@ private:
     Layer currentLayer() const;
     juce::String knobParamID (Layer, int knob) const;
     void showMenu (int learnIdx = -1);
+public:
+    juce::PopupMenu buildContextMenu (int learnIdx = -1);   // menu clic droit (aussi pour l'outil de controle des menus)
+private:
+    int userSlot = 0;                      // preset utilisateur charge (1..9), 0 = aucun
+    double lastGlowReadMs = 0.0;
     void showPresetMenu();
     int  learnIndexAt (const juce::MouseEvent&) const;
     void setHeightKeepingAspect (int h);
@@ -96,6 +102,7 @@ private:
     std::unique_ptr<juce::Drawable> logo;
     juce::Path printPath, titlePath, linePath, halfPath, starPath, ringPath;
     NineHandsMenu::MenuLnf menuLnf;
+    NineHandsWindow::HostLock hostLock;    // fenetre du DAW : jamais sous 60 %, jamais au-dela de 150 %
 
     int cacheW = 0, cacheH = 0;
     float cacheScale = 0.0f, forcedScale = 0.0f;

@@ -90,6 +90,9 @@ public:
     void resetMidiMap();
 
     // UI
+    std::atomic<int> uiSizeIdx { -1 };    // taille choisie au menu pour ce projet (0..2), -1 = taille par defaut choisie
+    std::atomic<bool> midiFsMomentary { false };   // footswitch MIDI : false = latching (127 on / 0 off), true = bascule a chaque appui
+    int prevBypassCC = 0;
     std::atomic<int> glowPct { 100 };     // Glow : intensite des halos des LEDs (25 / 50 / 75 / 100 %)
     std::atomic<int> uiHeight { 0 };      // 0 = pas de taille sauvegardée pour cette instance -> taille par défaut des nouvelles fenêtres
     bool isFrozen() const       { return engine.frozen.load(); }

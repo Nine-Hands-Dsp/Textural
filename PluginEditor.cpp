@@ -1,4 +1,5 @@
 #include "PluginEditor.h"
+#include "NineHandsUserPresets.h"
 #include "WigaWindowSize.h"
 #include "Layout.h"
 
@@ -43,17 +44,18 @@ TexturalAudioProcessorEditor::TexturalAudioProcessorEditor (TexturalAudioProcess
     glowStatus  = img (BinaryData::glow_status_png, BinaryData::glow_status_pngSize);
     boldFace = Typeface::createSystemTypefaceFor (BinaryData::PoppinsBold_ttf, BinaryData::PoppinsBold_ttfSize);
     medFace  = Typeface::createSystemTypefaceFor (BinaryData::PoppinsMedium_ttf, BinaryData::PoppinsMedium_ttfSize);
-    menuLnf.med = medFace; menuLnf.bold = boldFace; menuLnf.reg = medFace;
+    menuLnf.f = { medFace, medFace, boldFace };
+    proc.glowPct = NineHandsGlow::percent (JucePlugin_Name);   // Glow intensity : commun a toutes les fenetres (settings.xml)
     logo = Drawable::createFromImageData (BinaryData::NineHands_Logo_Black_svg, BinaryData::NineHands_Logo_Black_svgSize);
     buildPrint();
     setLookAndFeel (&menuLnf);
 
-    const int savedH = proc.uiHeight.load();
     setResizable (true, true);
     setResizeLimits (roundToInt (kDefaultH * kW / kH), kDefaultH, roundToInt (kMaxH * kW / kH), kMaxH);
     if (auto* c = getConstrainer()) c->setFixedAspectRatio (kW / kH);
+    hostLock.setLimits (roundToInt (kDefaultH * kW / kH), kDefaultH, roundToInt (kMaxH * kW / kH), kMaxH);
     setOpaque (true);
-    setHeightKeepingAspect (savedH > 0 ? jlimit (kDefaultH, kMaxH, savedH) : sizeHeight (WigaWindowSize::defaultIndex (JucePlugin_Name, kNumSizes)));
+    setHeightKeepingAspect (sizeHeight (NineHandsWindow::openIndex (JucePlugin_Name, proc.uiSizeIdx.load(), kNumSizes)));   // taille du projet, sinon taille par defaut
     rebuildCaches();
     startTimerHz (30);
 }
@@ -82,7 +84,7 @@ void TexturalAudioProcessorEditor::useSoftwareRenderer()
    #endif
 }
 
-void TexturalAudioProcessorEditor::parentHierarchyChanged() { useSoftwareRenderer(); }
+void TexturalAudioProcessorEditor::parentHierarchyChanged() { useSoftwareRenderer(); hostLock.track (*this); }
 void TexturalAudioProcessorEditor::visibilityChanged()      { useSoftwareRenderer(); if (isShowing()) repaint(); }
 
 void TexturalAudioProcessorEditor::askRepaint (Rectangle<int> r)
@@ -134,12 +136,13 @@ void TexturalAudioProcessorEditor::setHeightKeepingAspect (int h)
 {
     h = jlimit (kDefaultH, kMaxH, h);
     setSize (roundToInt ((float) h * kW / kH), h);
+    hostLock.enforce();
 }
 
 void TexturalAudioProcessorEditor::resized()
 {
     // anti-gel : jamais de setSize ici ; les limites du constrainer (jamais plus petit que la taille par defaut) suffisent
-    proc.uiHeight = jlimit (kDefaultH, kMaxH, getHeight());
+    // seules les tailles choisies au menu sont enregistrees (pas celles tirees au coin)
     resizeSettle = 4;
 }
 
@@ -538,6 +541,13 @@ void TexturalAudioProcessorEditor::timerCallback()
 
     // moteur logiciel, caches, chien de garde (anti-gel v2)
     if (getPeer() != lastPeer || now - lastRendererCheckMs > 1000.0) { lastRendererCheckMs = now; useSoftwareRenderer(); }
+    hostLock.track (*this);
+    if (now - lastGlowReadMs > 3000.0)       // Glow intensity : commun a toutes les fenetres (jamais dans paint)
+    {
+        lastGlowReadMs = now;
+        const int gp = NineHandsGlow::percent (JucePlugin_Name);
+        if (gp != proc.glowPct.load()) { proc.glowPct = gp; repaint(); }
+    }
     if (resizeSettle > 0 && --resizeSettle == 0) rebuildCaches();
     else if (resizeSettle == 0 && now - lastScaleCheckMs > 250.0)
     {
@@ -694,92 +704,77 @@ void TexturalAudioProcessorEditor::showPresetMenu()
     });
 }
 
-void TexturalAudioProcessorEditor::showMenu (int learnIdx)
+PopupMenu TexturalAudioProcessorEditor::buildContextMenu (int learnIdx)
 {
+    using namespace NineHandsMenu;
     PopupMenu m;
     m.setLookAndFeel (&menuLnf);
-    const int h = getHeight();
     const int lt = proc.learnTarget.load();
-    auto ccText = [this] (int i)
-    {
-        const int cc = proc.ccAssign[i].load();
-        return cc >= 0 ? "CC " + String (cc) : String ("none");
-    };
+    auto ccText = [this] (int i) { const int cc = proc.ccAssign[i].load(); return cc >= 0 ? "CC " + String (cc) : String ("not assigned"); };
+    const Colour accent (0xff00d060);
     if (learnIdx >= 0)
     {
+        // menu d'une commande (tronc commun) : en-tete, MIDI Learn, Clear MIDI, Cancel MIDI learn
         const String name = TexturalAudioProcessor::learnName (learnIdx);
-        m.addSectionHeader (name);
-        m.addItem (1000 + learnIdx, "MIDI Learn: " + name + " (" + ccText (learnIdx) + ")", true, lt == learnIdx);
+        addHeader (m, menuLnf.f, icoKnob, accent, name, "MIDI: " + ccText (learnIdx));
+        m.addItem (1000 + learnIdx, "MIDI Learn: " + name, true, lt == learnIdx);
         m.addItem (1100 + learnIdx, "Clear MIDI: " + name, proc.ccAssign[learnIdx].load() >= 0);
-        if (lt >= 0) m.addItem (1200, "Cancel MIDI learn");
-        m.addSeparator();
+        m.addItem (1200, "Cancel MIDI learn", lt >= 0);
+        return m;
     }
-    m.addSectionHeader ("Textural (NINE HANDS | DSP)");
-    {
-        const char* names[kNumSizes] = { "60 %", "75 %", "100 %" };
-        const int def = WigaWindowSize::defaultIndex (JucePlugin_Name, kNumSizes);
-        PopupMenu sizes, defSizes;
-        for (int i = 0; i < kNumSizes; ++i)
-        {
-            sizes.addItem (1 + i, String (names[i]) + (i == def ? "  (default)" : ""), true, std::abs (h - sizeHeight (i)) <= 2);
-            defSizes.addItem (30 + i, names[i], true, i == def);
-        }
-        sizes.addSeparator();
-        sizes.addSubMenu ("Default size (new windows)", defSizes);
-        m.addSubMenu ("Plugin size", sizes);
-    }
-    {
-        PopupMenu glow;
-        const int g = proc.glowPct.load();
-        for (int v : { 25, 50, 75, 100 }) glow.addItem (40 + v / 25, String (v) + " %", true, g == v);
-        m.addSubMenu ("Glow", glow);
-    }
-    m.addSeparator();
 
-    PopupMenu save;
-    for (int i = 1; i <= 8; ++i) if (! TexturalAudioProcessor::isLive (i)) save.addItem (10 + i, proc.presetName (i));
-    m.addSubMenu ("Save current settings to preset", save);
-    {
-        const int c = proc.currentPreset.load();
-        m.addItem (21, "Reset current preset to factory", c >= 1 && c <= 8 && ! TexturalAudioProcessor::isLive (c));
-    }
-    m.addItem (22, "Reset all presets to factory");
+    addHeader (m, menuLnf.f, icoPedal, accent, "Textural", "Granular synth  v" + String (JucePlugin_VersionString));
+    PopupMenu factory;
+    const int cur = proc.currentPreset.load();
+    for (int i = 1; i <= TexturalAudioProcessor::kLastPreset; ++i)
+        factory.addItem (100 + i, proc.presetName (i), true, cur == i && userSlot == 0);
+    m.addSubMenu ("Factory presets", factory);
+    NineHandsUserPresets::addMenus (m, "Textural", 200, 300, userSlot);
     m.addSeparator();
 
     PopupMenu midi;
+    midi.addSectionHeader ("MIDI Learn");
     for (int i = 0; i < TexturalAudioProcessor::kNumLearn; ++i)
-        midi.addItem (1000 + i, "Learn: " + String (TexturalAudioProcessor::learnName (i)) + " (" + ccText (i) + ")", true, lt == i);
+        midi.addItem (1000 + i, "Learn: " + String (TexturalAudioProcessor::learnName (i)) + "  (" + ccText (i) + ")", true, lt == i);
     midi.addSeparator();
-    if (lt >= 0) midi.addItem (1200, "Cancel MIDI learn");
+    midi.addItem (1200, "Cancel MIDI learn", lt >= 0);
     midi.addItem (1201, "Clear all MIDI assignments");
     midi.addSeparator();
-    midi.addItem (1202, "Program Change 1-9 = presets", false);
+    NineHandsWindow::addMidiFootswitchMode (midi, ! proc.midiFsMomentary.load());
+    midi.addSeparator();
+    NineHandsWindow::addProgramChangeInfo (midi);
     m.addSubMenu ("MIDI", midi);
+    m.addSeparator();
 
+    const char* names[kNumSizes] = { "60 %", "75 %", "100 %" };
+    const int heights[kNumSizes] = { sizeHeight (0), sizeHeight (1), sizeHeight (2) };
+    m.addSubMenu ("Plugin size", NineHandsWindow::sizeMenu (JucePlugin_Name, kNumSizes, names, heights, getHeight()));
+    m.addSubMenu ("Glow intensity", NineHandsWindow::glowMenu (proc.glowPct.load()));
+    return m;
+}
+
+void TexturalAudioProcessorEditor::showMenu (int learnIdx)
+{
+    auto m = buildContextMenu (learnIdx);
     SafePointer<TexturalAudioProcessorEditor> safe (this);
     m.showMenuAsync (PopupMenu::Options().withMousePosition(), [safe] (int r)
     {
-        if (safe == nullptr || r == 0) return;
+        if (safe == nullptr || r == 0 || r == 9001) return;
         auto& ed = *safe;
-        switch (r)
-        {
-            case 1: case 2: case 3: ed.setHeightKeepingAspect (sizeHeight (r - 1)); break;
-            case 30: case 31: case 32:
-                WigaWindowSize::setDefaultIndex (JucePlugin_Name, r - 30);
-                ed.setHeightKeepingAspect (sizeHeight (r - 30));
-                break;
-            case 41: case 42: case 43: case 44: ed.proc.glowPct = (r - 40) * 25; break;
-            case 21: ed.proc.resetPresetToFactory (ed.proc.currentPreset.load()); break;
-            case 22: ed.proc.resetAllPresets(); break;
-            default:
-                if (r > 10 && r <= 18) ed.proc.savePresetTo (r - 10);
-                else if (r >= 1000 && r < 1000 + TexturalAudioProcessor::kNumLearn)
-                    ed.proc.learnTarget.store (ed.proc.learnTarget.load() == r - 1000 ? -1 : r - 1000);
-                else if (r >= 1100 && r < 1100 + TexturalAudioProcessor::kNumLearn) ed.proc.ccAssign[r - 1100].store (-1);
-                else if (r == 1200) ed.proc.learnTarget.store (-1);
-                else if (r == 1201) { ed.proc.learnTarget.store (-1); ed.proc.resetMidiMap(); }
-                break;
-        }
+        auto& pr = ed.proc;
+        int inst = pr.uiSizeIdx.load();
+        const int sz = NineHandsWindow::handleSize (r, JucePlugin_Name, kNumSizes, inst);
+        if (sz >= 0) { pr.uiSizeIdx = inst; ed.setHeightKeepingAspect (sizeHeight (sz)); return; }
+        if (const int pc = NineHandsWindow::handleGlow (r, JucePlugin_Name)) { pr.glowPct = pc; ed.repaint(); return; }
+        if (r == NineHandsWindow::idLatch || r == NineHandsWindow::idMomentary) pr.midiFsMomentary = r == NineHandsWindow::idMomentary;
+        else if (r > 100 && r <= 100 + TexturalAudioProcessor::kLastPreset) { pr.selectPreset (r - 100); ed.userSlot = 0; }
+        else if (r > 200 && r < 210) { if (NineHandsUserPresets::load (pr, "Textural", r - 200)) ed.userSlot = r - 200; }
+        else if (r > 300 && r < 310) { if (NineHandsUserPresets::save (pr, "Textural", r - 300)) ed.userSlot = r - 300; }
+        else if (r >= 1000 && r < 1000 + TexturalAudioProcessor::kNumLearn)
+            pr.learnTarget.store (pr.learnTarget.load() == r - 1000 ? -1 : r - 1000);
+        else if (r >= 1100 && r < 1100 + TexturalAudioProcessor::kNumLearn) pr.ccAssign[r - 1100].store (-1);
+        else if (r == 1200) pr.learnTarget.store (-1);
+        else if (r == 1201) { pr.learnTarget.store (-1); pr.resetMidiMap(); }
     });
 }
 

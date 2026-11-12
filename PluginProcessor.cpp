@@ -237,7 +237,16 @@ void TexturalAudioProcessor::handleMidi (const MidiBuffer& midi)
             if (i == kLearnNext) { if (v >= 64) pendingPresetStep.fetch_add (1); continue; }
             if (i >= kMaxQueued) continue;
             float norm = (float) v / 127.0f;
-            if (i == bypassIndex) norm = v >= 64 ? 0.0f : 1.0f;              // BYPASS >= 64 = effect ON
+            if (i == bypassIndex && midiFsMomentary.load (std::memory_order_relaxed))   // momentary : chaque appui bascule
+            {
+                const bool rising = v >= 64 && prevBypassCC < 64;
+                prevBypassCC = v;
+                if (! rising) continue;
+                auto* bp = apvts.getParameter (learnId (i));
+                const float cur = pendingSet[i].load() ? pendingValue[i].load() : (bp != nullptr ? bp->getValue() : 0.0f);
+                norm = cur > 0.5f ? 0.0f : 1.0f;
+            }
+            else if (i == bypassIndex) norm = v >= 64 ? 0.0f : 1.0f;         // BYPASS >= 64 = effect ON
             else if (ccIsBool[i]) norm = v >= 64 ? 1.0f : 0.0f;
             else if (ccPositions[i] > 1)                                       // sélecteur : CC réparti sur les positions
                 norm = (float) jmin (ccPositions[i] - 1, v * ccPositions[i] / 128) / (float) (ccPositions[i] - 1);
@@ -661,7 +670,8 @@ void TexturalAudioProcessor::getStateInformation (MemoryBlock& dest)
 {
     auto state = apvts.copyState();
     state.setProperty ("preset", currentPreset.load(), nullptr);
-    state.setProperty ("uiHeight", uiHeight.load(), nullptr);
+    state.setProperty ("uiSize", uiSizeIdx.load(), nullptr);
+    state.setProperty ("midiFsMomentary", midiFsMomentary.load(), nullptr);
     state.setProperty ("glow", glowPct.load(), nullptr);
     for (int i = 0; i < kNumLearn; ++i)
         state.setProperty ("cc_" + learnId (i), ccAssign[i].load(), nullptr);
@@ -694,6 +704,11 @@ void TexturalAudioProcessor::setStateInformation (const void* data, int size)
     {
         const int uh = (int) state.getProperty ("uiHeight", 0);   // 0 = aucune taille sauvegardée pour cette instance
         uiHeight = uh > 0 ? jlimit (493, 1437, uh) : 0;
+        int idx = -1;                                             // ancien projet : sa hauteur si c'est une des trois tailles du menu
+        const int hs[3] = { 493, 719, 958 };
+        for (int k = 0; k < 3; ++k) if (uh > 0 && std::abs (uh - hs[k]) <= 2) idx = k;
+        uiSizeIdx = jlimit (-1, 2, (int) state.getProperty ("uiSize", idx));
+        midiFsMomentary = (bool) state.getProperty ("midiFsMomentary", false);
         const int gl = (int) state.getProperty ("glow", 100);
         glowPct = (gl == 25 || gl == 50 || gl == 75) ? gl : 100;
     }
